@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>왕국의 여명</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<section id="menu" class="screen">
+  <div class="box">
+    <h1>👑 왕국의 여명</h1>
+    <p class="sub">글자 시험판 0.1</p>
+    <label>이름 <input id="name" maxlength="8" placeholder="영주 이름"></label>
+    <div class="row">
+      <button id="soloBtn">컴퓨터와 하기</button>
+      <select id="botCount"><option value="1">상대 1명</option><option value="2">상대 2명</option><option value="3">상대 3명</option></select>
+    </div>
+    <hr>
+    <button id="hostBtn">방 만들기 (친구와)</button>
+    <div class="row"><input id="code" maxlength="4" placeholder="방 코드"><button id="joinBtn">참가</button></div>
+    <p id="status" class="sub"></p>
+    <p id="err" class="err"></p>
+    <p class="sub"><a href="RULES.md" target="_blank">규칙서 보기</a></p>
+  </div>
+</section>
+
+<section id="lobbyScreen" class="screen">
+  <div class="box">
+    <h2>대기실 — 방 코드 <b id="roomCode"></b></h2>
+    <div class="row"><input id="roomLink" readonly><button id="copyBtn">링크 복사</button></div>
+    <ul id="lobbyList"></ul>
+    <div id="hostCtl">
+      <button id="addBotBtn">컴퓨터 추가</button>
+      <button id="startBtn">시작</button>
+    </div>
+    <p id="waitHost" class="sub">방장이 시작하길 기다리는 중…</p>
+  </div>
+</section>
+
+<section id="game" class="screen">
+  <header id="top"></header>
+  <main>
+    <div id="board"></div>
+    <aside>
+      <div id="me"></div>
+      <div id="others"></div>
+    </aside>
+  </main>
+  <div id="choice"></div>
+  <div id="log"></div>
+</section>
+
+<section id="endScreen" class="screen">
+  <div class="box">
+    <h2>🏁 결과</h2>
+    <table id="result"></table>
+    <button id="againBtn">메뉴로</button>
+  </div>
+</section>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="data.js"></script>
+<script src="engine.js"></script>
+<script src="bot.js"></script>
+<script src="ui.js"></script>
+<script src="net.js"></script>
+</body>
+</html>
