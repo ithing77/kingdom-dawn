@@ -84,25 +84,87 @@ const View = (() => {
     return `${next.name} 승격: ${parts.join(' · ')}`;
   }
 
-  function playerBox(p, full) {
+  // ---------- 마을 판 ----------
+  const MAX_PLOTS = D.stages[D.stages.length - 1].plots;
+
+  function plots(p) {
+    const open = H.plotsTotal(p), tiles = [`<div class="plot home">🏡<small>촌장의 집</small></div>`];
+    for (const b of p.buildings) tiles.push(`<div class="plot bld tier${BLD[b].stage}" title="${BLD[b].text}">${BLD[b].art}<small>${BLD[b].name}</small></div>`);
+    for (let i = 0; i < p.fields; i++) tiles.push(`<div class="plot field">🌾<small>밭</small></div>`);
+    while (tiles.length < open) tiles.push(`<div class="plot empty"><small>빈 땅</small></div>`);
+    for (let i = open; i < MAX_PLOTS; i++) {
+      const st = D.stages.findIndex(x => x.plots > i);
+      tiles.push(`<div class="plot fog">🌫️<small>${D.stages[st].name} 되면</small></div>`);
+    }
+    return `<div class="plots">${tiles.join('')}</div>`;
+  }
+
+  function store(p) {
+    return `<div class="store">${Object.keys(D.res).map(r => {
+      const n = p.res[r];
+      const pile = Array.from({ length: Math.min(n, 8) }, () => `<i>${R(r)}</i>`).join('');
+      return `<div class="pile t-${r}"><span class="lbl">${D.res[r].name}</span><span class="heap">${pile || '<em>없음</em>'}</span><b>${n}</b></div>`;
+    }).join('')}</div>`;
+  }
+
+  function house(p) {
+    const cap = Math.max(H.capacity(p), p.workers.length);
+    const slots = [];
+    for (let i = 0; i < Math.min(cap, D.maxWorkers); i++) {
+      const w = p.workers[i];
+      if (!w) { slots.push(`<span class="slot open" title="빈 자리 — 새 주민이 들어올 수 있어요"></span>`); continue; }
+      const tag = w.born ? '<i>아기</i>' : w.arm ? `<i>⚔️${w.arm}</i>` : '';
+      slots.push(`<span class="slot${w.placed ? ' out' : ''}${w.born ? ' baby' : ''}" title="${w.placed ? '일하러 나감' : '집에 있음'}">${meeple(p.id)}${tag}</span>`);
+    }
+    return `<div class="house">${slots.join('')}</div>`;
+  }
+
+  function road(p) {
+    return `<div class="road">${D.stages.map((st, i) => `<span class="node${i < p.stage ? ' done' : ''}${i === p.stage ? ' now' : ''}">${st.name}</span>`).join('<span class="link"></span>')}</div>`;
+  }
+
+  function villageBoard(p) {
     const sc = Engine.score(p).total;
-    const res = Object.keys(D.res).map(r => tok(r, p.res[r])).join('');
-    const workers = p.workers.map(w => `<span class="wk${w.placed ? ' used' : ''}${w.born ? ' baby' : ''}">${meeple(p.id)}${w.arm ? `<i>⚔️${w.arm}</i>` : ''}</span>`).join('');
-    const bl = p.buildings.map(b => `<span class="tag tier${BLD[b].stage}" title="${BLD[b].text}">${BLD[b].art} ${BLD[b].name}</span>`).join('');
-    return `<div class="pl ${S.current === p.id && !S.over ? 'cur' : ''}">
-      <h3><span><span class="who c${p.id}">${esc(p.name)}</span> ${D.stages[p.stage].name}${p.id === me ? ' (나)' : ''}</span><span>⭐ ${sc}점</span></h3>
-      <div class="res">${res}</div>
-      <div class="wks">${workers}<span class="sub">자리 ${H.capacity(p)}</span></div>
-      <div>평판 ${p.rep}${p.famine ? ` · <span class="no">기근 ${p.famine}</span>` : ''}</div>
-      <div>땅 ${H.plotsTotal(p) - H.freePlots(p)}/${H.plotsTotal(p)} — 촌장의 집, 밭 ${p.fields}</div>
-      <div class="bl">${bl || '<span class="sub">건물 없음</span>'}</div>
-      ${full ? `<div class="need">${stageNeed(p)}</div>` : ''}
+    const turn = S.current === p.id && !S.over;
+    return `<div class="village b${p.id}${turn ? ' cur' : ''}">
+      <div class="vhead"><span class="who c${p.id}">${esc(p.name)}</span><b>${D.stages[p.stage].name}</b>${p.id === me ? '<span class="sub">내 마을</span>' : ''}
+        <span class="vstat">⭐ ${sc}점 · 평판 ${p.rep}${p.famine ? ` · <span class="no">기근 ${p.famine}</span>` : ''}</span></div>
+      <div class="vbody">
+        <section><h4>땅 ${H.plotsTotal(p) - H.freePlots(p)}/${H.plotsTotal(p)}</h4>${plots(p)}</section>
+        <section><h4>창고</h4>${store(p)}</section>
+        <section><h4>집 (자리 ${H.capacity(p)})</h4>${house(p)}<h4>승격 길</h4>${road(p)}<div class="need">${stageNeed(p)}</div></section>
+      </div>
     </div>`;
   }
 
+  // 상대 판: 작게 요약, 누르면 크게
+  function miniBoard(p) {
+    const res = Object.keys(D.res).map(r => tok(r, p.res[r])).join('');
+    const mini = Array.from({ length: MAX_PLOTS }, (_, i) => {
+      const used = 1 + p.buildings.length + p.fields;
+      return `<i class="${i < used ? 'u' : i < H.plotsTotal(p) ? 'e' : 'f'}"></i>`;
+    }).join('');
+    const ws = p.workers.map(w => `<span class="${w.placed ? 'out' : ''}">${meeple(p.id)}</span>`).join('');
+    return `<button class="mini b${p.id}${S.current === p.id && !S.over ? ' cur' : ''}" data-pid="${p.id}">
+      <span class="vhead"><span class="who c${p.id}">${esc(p.name)}</span><b>${D.stages[p.stage].name}</b><span class="vstat">⭐ ${Engine.score(p).total}</span></span>
+      <span class="mres">${res}</span>
+      <span class="mrow"><span class="mplots">${mini}</span><span class="mws">${ws}</span></span>
+    </button>`;
+  }
+
   function players() {
-    $('me').innerHTML = playerBox(S.players[me], true);
-    $('others').innerHTML = S.players.filter(p => p.id !== me).map(p => playerBox(p, true)).join('');
+    $('me').innerHTML = villageBoard(S.players[me]);
+    $('others').innerHTML = S.players.filter(p => p.id !== me).map(miniBoard).join('');
+    for (const b of $('others').querySelectorAll('.mini')) b.onclick = () => { zoomed = +b.dataset.pid; zoomView(); };
+    zoomView();
+  }
+  let zoomed = null;
+  function zoomView() {
+    const z = $('zoom');
+    if (zoomed === null) { z.style.display = 'none'; return; }
+    z.style.display = 'grid';
+    z.innerHTML = `<div class="zbox">${villageBoard(S.players[zoomed])}<button id="zclose">닫기</button></div>`;
+    z.onclick = e => { if (e.target === z || e.target.id === 'zclose') { zoomed = null; zoomView(); } };
   }
 
   function optLabel(id, o) {
