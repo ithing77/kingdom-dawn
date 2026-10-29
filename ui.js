@@ -20,7 +20,7 @@ const View = (() => {
     const moves = Engine.legalMoves(S, me);
     if (sel && !moves.some(m => m.space === sel)) sel = null;
     if (newRound) sel = null;
-    top(); board(moves); players(); choice(moves); logView();
+    top(); board(moves, newRound); players(); choice(moves); logView();
   }
 
   function top() {
@@ -52,21 +52,27 @@ const View = (() => {
     return '지금은 못 해요';
   }
 
-  function board(moves) {
+  // 일꾼 말 (색은 플레이어 색)
+  const MEEPLE = '<path d="M12 1.5a3.6 3.6 0 0 1 3.6 3.6c0 1.1-.5 2-1.2 2.7 3.2.6 7.6 2 7.6 4.6 0 1.1-1.4 1.4-3.2 1.1l2.1 7.6c.2.8-.4 1.2-1 1.2h-4.6L12 17.2l-3.3 5.1H4.1c-.6 0-1.2-.4-1-1.2l2.1-7.6c-1.8.3-3.2 0-3.2-1.1 0-2.6 4.4-4 7.6-4.6-.7-.7-1.2-1.6-1.2-2.7A3.6 3.6 0 0 1 12 1.5z"/>';
+  const meeple = (pid, cls = '') => `<svg class="mp f${pid} ${cls}" viewBox="0 0 24 24">${MEEPLE}</svg>`;
+  // 자원 토큰
+  const tok = (r, n) => `<span class="tok t-${r}" title="${D.res[r].name}">${R(r)}<b>${n}</b></span>`;
+  const art = x => x.img ? `<img src="${x.img}" alt="">` : `<span class="emo">${x.art || '❔'}</span>`;
+
+  function board(moves, newRound) {
     const p = S.players[me];
     const can = new Set(moves.map(m => m.space));
     $('board').innerHTML = S.open.map(id => {
       const a = ACT[id], sp = S.spaces[id];
-      const stock = Object.entries(sp.stock).filter(([, n]) => n).map(([r, n]) => `${R(r)} ${n}`).join(' ');
-      const by = sp.by !== null ? `<span class="who c${sp.by}">${esc(S.players[sp.by].name)}</span>` : '';
+      const stock = Object.entries(sp.stock).filter(([, n]) => n).map(([r, n]) => tok(r, n)).join('');
       const why = can.has(id) ? '' : whyNot(p, id);
-      const cls = ['space', sp.by !== null ? 'taken' : '', can.has(id) ? 'can' : '', a.round === S.round ? 'new' : '', sel === id ? 'sel' : ''].join(' ');
+      const cls = ['card', `k-${a.kind}`, sp.by !== null ? 'taken' : '', can.has(id) ? 'can' : '', a.round === S.round ? `new${newRound ? ' flip' : ''}` : '', sel === id ? 'sel' : ''].join(' ');
       return `<button class="${cls}" data-id="${id}" ${can.has(id) ? '' : 'disabled'}>
-        <span class="nm">${a.name} ${by}</span><span class="tx">${a.text}</span>
-        ${stock ? `<span class="stock">쌓임: ${stock}</span>` : ''}
-        ${why ? `<span class="why">${why}</span>` : ''}</button>`;
+        <span class="cname">${a.name}</span>
+        <span class="art">${art(a)}${a.round ? `<span class="royal">왕명 ${a.round}</span>` : ''}${stock ? `<span class="stock">${stock}</span>` : ''}${sp.by !== null ? meeple(sp.by, 'on') : ''}</span>
+        <span class="ctext">${a.text}${why ? `<span class="why">${why}</span>` : ''}</span></button>`;
     }).join('');
-    for (const b of $('board').querySelectorAll('.space.can')) b.onclick = () => { sel = b.dataset.id; pick = 0; render(S, me); };
+    for (const b of $('board').querySelectorAll('.card.can')) b.onclick = () => { sel = b.dataset.id; pick = 0; render(S, me); };
   }
 
   function stageNeed(p) {
@@ -80,13 +86,14 @@ const View = (() => {
 
   function playerBox(p, full) {
     const sc = Engine.score(p).total;
-    const res = Object.keys(D.res).map(r => `<span>${R(r)} ${D.res[r].name} ${p.res[r]}</span>`).join('');
-    const workers = p.workers.map(w => w.born ? '👶' : w.arm ? `⚔️${w.arm}` : w.placed ? '·' : '🧑').join(' ');
-    const bl = p.buildings.map(b => `<span class="tag" title="${BLD[b].text}">${BLD[b].name}</span>`).join('');
+    const res = Object.keys(D.res).map(r => tok(r, p.res[r])).join('');
+    const workers = p.workers.map(w => `<span class="wk${w.placed ? ' used' : ''}${w.born ? ' baby' : ''}">${meeple(p.id)}${w.arm ? `<i>⚔️${w.arm}</i>` : ''}</span>`).join('');
+    const bl = p.buildings.map(b => `<span class="tag tier${BLD[b].stage}" title="${BLD[b].text}">${BLD[b].art} ${BLD[b].name}</span>`).join('');
     return `<div class="pl ${S.current === p.id && !S.over ? 'cur' : ''}">
       <h3><span><span class="who c${p.id}">${esc(p.name)}</span> ${D.stages[p.stage].name}${p.id === me ? ' (나)' : ''}</span><span>⭐ ${sc}점</span></h3>
       <div class="res">${res}</div>
-      <div>주민 ${workers} (자리 ${H.capacity(p)}) · 평판 ${p.rep}${p.famine ? ` · <span class="no">기근 ${p.famine}</span>` : ''}</div>
+      <div class="wks">${workers}<span class="sub">자리 ${H.capacity(p)}</span></div>
+      <div>평판 ${p.rep}${p.famine ? ` · <span class="no">기근 ${p.famine}</span>` : ''}</div>
       <div>땅 ${H.plotsTotal(p) - H.freePlots(p)}/${H.plotsTotal(p)} — 촌장의 집, 밭 ${p.fields}</div>
       <div class="bl">${bl || '<span class="sub">건물 없음</span>'}</div>
       ${full ? `<div class="need">${stageNeed(p)}</div>` : ''}
@@ -106,7 +113,7 @@ const View = (() => {
     if (o.grow) return '👶 새 주민 맞이하기';
     if (o.iron) return `철 ${o.iron}로 무장 → ${lootText(o.loot, o.b)}`;
     if (o.loot) return lootText(o.loot, o.b);
-    if (o.b) return `🏠 ${BLD[o.b].name} (${costText(BLD[o.b].cost)}) — ${BLD[o.b].text || `평판 ${BLD[o.b].rep}`}`;
+    if (o.b) return `${BLD[o.b].art} ${BLD[o.b].name} (${costText(BLD[o.b].cost)}) — ${BLD[o.b].text || `평판 ${BLD[o.b].rep}`}`;
     if (o.r) return `${R(o.r)} ${D.res[o.r].name} + 금화 1`;
     if (o.free) return '금화 받기';
     if (o.pay) return `${o.pay.map(r => D.res[r].name).join('·')} 팔기`;

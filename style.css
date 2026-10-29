@@ -23,16 +23,53 @@ hr { border: 0; border-top: 1px solid var(--line); width: 100%; }
 #top { padding: 8px 16px; background: var(--accent); color: #fff; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
 #top .turn { font-weight: bold; background: #fff3; padding: 2px 10px; border-radius: 10px; }
 main { display: grid; grid-template-columns: 1fr 360px; gap: 12px; padding: 12px; overflow: auto; }
-#board { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; align-content: start; }
-.space { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: grid; gap: 3px; text-align: left; color: var(--ink); min-height: 96px; }
-.space .nm { font-weight: bold; }
-.space .tx { font-size: 12px; color: var(--mute); }
-.space .stock { font-size: 13px; }
-.space .why { font-size: 12px; color: var(--bad); }
-.space.taken { background: #ece5d6; }
-.space.can { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
-.space.new { outline: 2px dashed var(--accent); }
-.space.sel { background: var(--hl); }
+#board { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; align-content: start; }
+main { background: repeating-linear-gradient(90deg, #6b4a2e 0 3px, #5f4128 3px 7px, #6e4d30 7px 12px), #5f4128; }
+
+/* 카드: 테두리 색(--kc)은 종류마다 */
+.card { --kc: #2f5d3a; --kc2: #1c3b24; position: relative; display: grid; grid-template-rows: auto 1fr auto; aspect-ratio: 5 / 6.4;
+  padding: 6px; gap: 5px; border: 0; border-radius: 10px; text-align: center; color: var(--ink);
+  background: linear-gradient(160deg, var(--kc), var(--kc2)); box-shadow: 0 0 0 2px #c9a24a inset, 0 3px 6px #0006; transition: transform .12s; }
+.k-res { --kc: #2f6b3c; --kc2: #173a20; }
+.k-build { --kc: #8a5a2e; --kc2: #4e3018; }
+.k-temple { --kc: #e9e1cc; --kc2: #b9a46a; }
+.k-trade { --kc: #2f5f8f; --kc2: #1a3552; }
+.k-war { --kc: #9b2f2a; --kc2: #551614; }
+.k-family { --kc: #b0577f; --kc2: #6a2b48; }
+.cname { background: linear-gradient(#fbf3dc, #e8d6a6); border: 1px solid #c9a24a; border-radius: 6px; font-weight: bold; font-size: 15px; padding: 2px 4px; }
+.art { position: relative; display: grid; place-items: center; border: 1px solid #c9a24a; border-radius: 4px; overflow: hidden; min-height: 60px;
+  background: radial-gradient(circle at 50% 40%, #fff8e0 0, color-mix(in srgb, var(--kc) 45%, #f3e3b8) 70%); }
+.art img { width: 100%; height: 100%; object-fit: cover; }
+.art .emo { font-size: 44px; filter: drop-shadow(0 2px 2px #0005); }
+.ctext { background: linear-gradient(#fbf3dc, #eadbb3); border: 1px solid #c9a24a; border-radius: 6px; font-size: 12px; line-height: 1.3; padding: 4px; display: grid; gap: 2px; }
+.ctext .why { color: var(--bad); font-size: 11px; }
+.royal { position: absolute; top: 3px; left: 3px; font-size: 10px; background: #c9a24a; color: #2b2620; border-radius: 4px; padding: 0 4px; font-weight: bold; }
+.art .stock { position: absolute; bottom: 4px; right: 4px; display: flex; gap: 2px; }
+.art .mp.on { position: absolute; width: 46px; height: 46px; bottom: 2px; left: 6px; filter: drop-shadow(0 2px 2px #000a); }
+.card:disabled { opacity: 1; cursor: default; }
+.card:disabled:not(.taken) .art { filter: saturate(.35) brightness(.9); }
+.card.taken { filter: brightness(.82); }
+.card.can { cursor: pointer; }
+.card.can:hover { transform: translateY(-4px); }
+.card.can::after { content: ''; position: absolute; inset: -3px; border-radius: 12px; border: 2px solid #ffe28a; pointer-events: none; }
+.card.sel { transform: translateY(-6px); }
+.card.sel::after { border-width: 4px; box-shadow: 0 0 14px #ffe28a; }
+.card.new { box-shadow: 0 0 0 2px #c9a24a inset, 0 0 12px 3px #ffe28acc; }
+.card.flip { animation: flip .6s ease-out; }
+@keyframes flip { from { transform: rotateY(90deg); } to { transform: none; } }
+
+/* 일꾼 말과 자원 토큰 */
+.mp { width: 22px; height: 22px; fill: currentColor; stroke: #0007; stroke-width: .8; }
+.f0 { color: var(--p0); } .f1 { color: var(--p1); } .f2 { color: var(--p2); } .f3 { color: var(--p3); }
+.wks { display: flex; align-items: flex-end; gap: 2px; flex-wrap: wrap; }
+.wk { position: relative; display: inline-grid; }
+.wk.used { opacity: .3; }
+.wk.baby .mp { width: 15px; height: 15px; }
+.wk i { position: absolute; top: -6px; right: -10px; font-style: normal; font-size: 10px; background: #fff; border-radius: 6px; padding: 0 2px; }
+.wks .sub { margin-left: 6px; }
+.tok { display: inline-flex; align-items: center; gap: 1px; padding: 1px 6px 1px 3px; border-radius: 12px; font-size: 13px; background: #fff; border: 1px solid #0003; box-shadow: 0 1px 2px #0003; }
+.tok b { font-size: 12px; }
+.t-wood { background: #e9c99a; } .t-stone { background: #d5d5d0; } .t-iron { background: #b8c0cc; } .t-food { background: #f3dc9b; } .t-gold { background: #ffe680; }
 .who { display: inline-block; padding: 0 6px; border-radius: 8px; color: #fff; font-size: 12px; }
 .c0 { background: var(--p0); } .c1 { background: var(--p1); } .c2 { background: var(--p2); } .c3 { background: var(--p3); }
 
@@ -44,7 +81,8 @@ aside { display: grid; gap: 10px; align-content: start; }
 .need { font-size: 12px; }
 .ok { color: var(--good); } .no { color: var(--bad); }
 .bl { display: flex; flex-wrap: wrap; gap: 4px; }
-.tag { background: #efe6d2; border-radius: 6px; padding: 0 6px; font-size: 12px; }
+.tag { background: #efe6d2; border-radius: 6px; padding: 0 6px; font-size: 12px; border: 1px solid #0002; }
+.tag.tier0 { background: #ecd3b4; border-color: #a8703c; } .tag.tier1 { background: #e3e6ea; border-color: #8c96a3; } .tag.tier2 { background: #fbe9a8; border-color: #c9a24a; }
 
 #choice { padding: 0 12px; }
 #choice .panel { background: var(--panel); border: 2px solid var(--accent); border-radius: 10px; padding: 10px; display: grid; gap: 8px; margin-bottom: 8px; }
