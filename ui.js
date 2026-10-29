@@ -104,7 +104,8 @@ const View = (() => {
         <span class="cname">${a.name}</span>
         <span class="art">${art(a)}${a.round ? `<span class="royal">왕명 ${a.round}</span>` : ''}${stock ? `<span class="stock">${stock}</span>` : ''}${sp.by !== null ? standee(sp.by, sp.w ?? 0, 'on') : sel === id && pending !== null ? standee(me, pending, 'on ghost') : ''}</span>
         <span class="ctext">${a.text}${why ? `<span class="why">${why}</span>` : ''}</span></button>`;
-    }).join('');
+    }).join('') + D.actions.filter(a => a.round > S.round).sort((a, b) => a.round - b.round).map(a =>
+      `<div class="card back" title="${a.round}라운드에 열려요"><span class="rnd">${a.round}라운드</span></div>`).join('');
     for (const b of $('board').querySelectorAll('.card.can')) b.onclick = () => { if (sel === b.dataset.id) return; sel = b.dataset.id; pick = 0; fly = true; render(S, me); };
   }
 
@@ -121,8 +122,8 @@ const View = (() => {
   const MAX_PLOTS = D.stages[D.stages.length - 1].plots;
 
   function plots(p) {
-    const open = H.plotsTotal(p), tiles = [`<div class="plot home">${['🛖', '🏠', '🏰'][p.stage]}<small>촌장의 집</small></div>`];
-    for (const b of p.buildings) tiles.push(`<div class="plot bld tier${BLD[b].stage}" title="${BLD[b].text}">${BLD[b].art}<small>${BLD[b].name}</small></div>`);
+    const open = H.plotsTotal(p), tiles = [`<div class="plot home"><img src="${D.stages[p.stage].home}" alt=""><small>촌장의 집</small></div>`];
+    for (const b of p.buildings) tiles.push(`<div class="plot bld tier${BLD[b].stage}" title="${BLD[b].text}">${BLD[b].img ? `<img src="${BLD[b].img}" alt="">` : BLD[b].art}<small>${BLD[b].name}</small></div>`);
     for (let i = 0; i < p.fields; i++) tiles.push(`<div class="plot field">🌾<small>밭</small></div>`);
     while (tiles.length < open) tiles.push(`<div class="plot empty"><small>빈 땅</small></div>`);
     for (let i = open; i < MAX_PLOTS; i++) {
