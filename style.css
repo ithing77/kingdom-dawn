@@ -101,30 +101,32 @@ aside { display: grid; gap: 10px; align-content: start; }
 /* ---------- 마을 판 ---------- */
 .b0 { --pc: var(--p0); } .b1 { --pc: var(--p1); } .b2 { --pc: var(--p2); } .b3 { --pc: var(--p3); }
 #me { padding: 0 12px 10px; }
-.village { background: linear-gradient(#f7edd3, #e9d9b0); border: 3px solid #a07a3e; border-top: 8px solid var(--pc); border-radius: 12px; padding: 8px 12px; box-shadow: 0 4px 10px #0007; display: grid; gap: 6px; }
+.village { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: stretch; background: linear-gradient(#f7edd3, #e9d9b0); border: 3px solid #a07a3e; border-left: 8px solid var(--pc); border-radius: 12px; padding: 8px; box-shadow: 0 4px 10px #0007; }
 .village.cur { box-shadow: 0 0 0 3px #ffe28a, 0 4px 10px #0007; }
 .vhead { display: flex; gap: 8px; align-items: center; }
 .vstat { margin-left: auto; font-size: 13px; }
-.vbody { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: start; }
-.vbody h4 { margin: 0 0 4px; font-size: 12px; color: #7a5a2a; }
-.vbody section + section { border-left: 1px dashed #b89b63; padding-left: 14px; }
-.plots { display: grid; grid-template-columns: repeat(5, 62px); gap: 4px; }
-.plot { height: 56px; border-radius: 6px; display: grid; place-items: center; align-content: center; font-size: 22px; line-height: 1; border: 1px solid #0003; }
-.plot small { font-size: 10px; margin-top: 3px; text-align: center; }
-.plot.home { background: #d9b98a; }
-.plot.field { background: repeating-linear-gradient(0deg, #9bbf5c 0 5px, #86a94a 5px 10px); }
-.plot.bld { background: #fff8e6; box-shadow: 0 0 0 2px #a8703c inset; }
-.plot.bld.tier1 { box-shadow: 0 0 0 2px #8c96a3 inset; } .plot.bld.tier2 { box-shadow: 0 0 0 2px #c9a24a inset; background: #fff3c8; }
-.plot.empty { background: #c8d79a66; border: 2px dashed #8a9a5a; color: #6b7a40; }
-.plot.fog { background: #9a9a9a55; color: #777; filter: grayscale(1); opacity: .7; }
-.store { display: grid; grid-template-columns: repeat(5, minmax(64px, 1fr)); gap: 6px; }
-.pile { border-radius: 8px; padding: 4px; display: grid; justify-items: center; gap: 2px; border: 1px solid #0002; min-height: 92px; box-shadow: inset 0 2px 6px #0003; }
-.pile .lbl { font-size: 11px; }
-.pile { position: relative; }
-.pile .heap { position: relative; width: 100%; height: 74px; display: grid; place-items: center; }
-.pile .heap img { position: absolute; height: 30px; width: auto; filter: drop-shadow(0 3px 2px #0007); }
-.pile .heap em { font-size: 11px; color: #0005; font-style: normal; }
-.pile b { position: absolute; right: 6px; bottom: 3px; font-size: 13px; background: #fff9; border-radius: 8px; padding: 0 5px; }
+/* 마을 판: 단계 그림 위에 땅 자리 10칸을 얹는다 (그림 가운데 빈 곳에 맞춤) */
+.land { position: relative; height: 270px; aspect-ratio: 2 / 1; background-size: cover; border-radius: 8px; box-shadow: 0 3px 8px #0006; }
+.plots { position: absolute; left: 12%; right: 12%; top: 15%; bottom: 15%; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr); gap: 8px; }
+.plot { border-radius: 6px; display: grid; place-items: center; align-content: center; font-size: 30px; line-height: 1; }
+.plot small { font-size: 10px; margin-top: 4px; text-align: center; background: #fff8e8e6; border-radius: 4px; padding: 0 4px; }
+.plot.home { background: #e9c99ae6; box-shadow: 0 0 0 2px #8a5a2e inset, 0 3px 4px #0005; }
+.plot.field { background: repeating-linear-gradient(0deg, #9bbf5c 0 6px, #7f9f42 6px 12px); box-shadow: 0 0 0 2px #5f7a2e inset, 0 3px 4px #0005; }
+.plot.bld { background: #fff8e6f0; box-shadow: 0 0 0 2px #a8703c inset, 0 3px 4px #0005; }
+.plot.bld.tier1 { box-shadow: 0 0 0 2px #8c96a3 inset, 0 3px 4px #0005; } .plot.bld.tier2 { box-shadow: 0 0 0 3px #c9a24a inset, 0 3px 4px #0005; background: #fff3c8f0; }
+.plot.empty { border: 2px dashed #fff9; background: #ffffff1f; color: #fff; }
+.plot.empty small { background: #0004; color: #fff; }
+.plot.fog { background: #f4f1e844; backdrop-filter: blur(2px) grayscale(.7) brightness(1.05); border: 1px solid #fff6; font-size: 18px; opacity: .9; }
+.plot.fog small { background: #0006; color: #ddd; }
+.vside { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.store { display: flex; gap: 6px; }
+.pile { position: relative; flex: 1; max-width: 90px; border-radius: 8px; padding: 2px 4px; display: grid; justify-items: center; border: 1px solid #0002; box-shadow: inset 0 2px 5px #0003; }
+.pile .lbl { font-size: 10px; }
+.pile .heap { position: relative; width: 100%; height: 44px; display: grid; place-items: center; }
+.pile .heap img { position: absolute; height: 20px; width: auto; filter: drop-shadow(0 2px 1px #0007); }
+.pile .heap em { font-size: 10px; color: #0005; font-style: normal; }
+.pile b { position: absolute; right: 4px; bottom: 2px; font-size: 12px; background: #fff9; border-radius: 8px; padding: 0 4px; }
+.vrow { display: flex; gap: 12px; align-items: flex-end; }
 .house { display: flex; gap: 4px; padding: 6px; background: #b88a55; border-radius: 8px 8px 4px 4px; clip-path: polygon(0 22%, 50% 0, 100% 22%, 100% 100%, 0 100%); padding-top: 18px; }
 .slot { position: relative; width: 44px; height: 56px; display: grid; place-items: center; background: #f3e3c0; border-radius: 6px; }
 .slot .mp { height: 52px; }
@@ -136,10 +138,10 @@ aside { display: grid; gap: 10px; align-content: start; }
 .node { font-size: 11px; padding: 2px 6px; border-radius: 10px; background: #fff; border: 1px solid #b89b63; color: #999; }
 .node.done { background: #c9e0b8; color: #333; } .node.now { background: var(--pc); color: #fff; font-weight: bold; border-color: var(--pc); }
 .link { width: 14px; height: 2px; background: #b89b63; }
-.village .need { max-width: 230px; }
+.village .need { font-size: 12px; }
 
 #others { display: flex; gap: 10px; padding: 8px 12px 0; flex-wrap: wrap; }
-.mini { display: grid; gap: 4px; text-align: left; color: var(--ink); background: linear-gradient(#f7edd3, #e9d9b0); border: 2px solid #a07a3e; border-top: 5px solid var(--pc); border-radius: 10px; padding: 5px 8px; min-width: 240px; font-size: 13px; }
+.mini { display: grid; gap: 4px; text-align: left; color: var(--ink); background: linear-gradient(#f7edd3e6, #e9d9b0e6), var(--bg) center / cover; border: 2px solid #a07a3e; border-top: 5px solid var(--pc); border-radius: 10px; padding: 5px 8px; min-width: 240px; font-size: 13px; }
 .mini.cur { box-shadow: 0 0 0 3px #ffe28a; }
 .mres { display: flex; gap: 3px; flex-wrap: wrap; }
 .mres .tok { font-size: 11px; padding: 0 4px 0 2px; }
@@ -153,6 +155,6 @@ aside { display: grid; gap: 10px; align-content: start; }
 
 @media (max-width: 900px) {
   main { grid-template-columns: 1fr; }
-  .vbody { grid-template-columns: 1fr; }
-  .vbody section + section { border-left: 0; padding-left: 0; }
+  .village { grid-template-columns: 1fr; }
+  .land { height: auto; width: 100%; }
 }

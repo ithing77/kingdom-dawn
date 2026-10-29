@@ -96,13 +96,13 @@ const View = (() => {
   const MAX_PLOTS = D.stages[D.stages.length - 1].plots;
 
   function plots(p) {
-    const open = H.plotsTotal(p), tiles = [`<div class="plot home">🏡<small>촌장의 집</small></div>`];
+    const open = H.plotsTotal(p), tiles = [`<div class="plot home">${['🛖', '🏠', '🏰'][p.stage]}<small>촌장의 집</small></div>`];
     for (const b of p.buildings) tiles.push(`<div class="plot bld tier${BLD[b].stage}" title="${BLD[b].text}">${BLD[b].art}<small>${BLD[b].name}</small></div>`);
     for (let i = 0; i < p.fields; i++) tiles.push(`<div class="plot field">🌾<small>밭</small></div>`);
     while (tiles.length < open) tiles.push(`<div class="plot empty"><small>빈 땅</small></div>`);
     for (let i = open; i < MAX_PLOTS; i++) {
       const st = D.stages.findIndex(x => x.plots > i);
-      tiles.push(`<div class="plot fog">🌫️<small>${D.stages[st].name} 되면</small></div>`);
+      tiles.push(`<div class="plot fog">🔒<small>${D.stages[st].name} 되면</small></div>`);
     }
     return `<div class="plots">${tiles.join('')}</div>`;
   }
@@ -134,12 +134,12 @@ const View = (() => {
     const sc = Engine.score(p).total;
     const turn = S.current === p.id && !S.over;
     return `<div class="village b${p.id}${turn ? ' cur' : ''}">
-      <div class="vhead"><span class="who c${p.id}">${esc(p.name)}</span><b>${D.stages[p.stage].name}</b>${p.id === me ? '<span class="sub">내 마을</span>' : ''}
-        <span class="vstat">⭐ ${sc}점 · 평판 ${p.rep}${p.famine ? ` · <span class="no">기근 ${p.famine}</span>` : ''}</span></div>
-      <div class="vbody">
-        <section><h4>땅 ${H.plotsTotal(p) - H.freePlots(p)}/${H.plotsTotal(p)}</h4>${plots(p)}</section>
-        <section><h4>창고</h4>${store(p)}</section>
-        <section><h4>집 (자리 ${H.capacity(p)})</h4>${house(p)}<h4>승격 길</h4>${road(p)}<div class="need">${stageNeed(p)}</div></section>
+      <div class="land" style="background-image:url(art/board${p.stage}.jpg)">${plots(p)}</div>
+      <div class="vside">
+        <div class="vhead"><span class="who c${p.id}">${esc(p.name)}</span><b>${D.stages[p.stage].name}</b>${p.id === me ? '<span class="sub">내 마을</span>' : ''}
+          <span class="vstat">⭐ ${sc}점 · 평판 ${p.rep}${p.famine ? ` · <span class="no">기근 ${p.famine}</span>` : ''}</span></div>
+        ${store(p)}
+        <div class="vrow">${house(p)}<div>${road(p)}<div class="need">${stageNeed(p)}</div></div></div>
       </div>
     </div>`;
   }
@@ -152,7 +152,7 @@ const View = (() => {
       return `<i class="${i < used ? 'u' : i < H.plotsTotal(p) ? 'e' : 'f'}"></i>`;
     }).join('');
     const ws = p.workers.map((w, i) => `<span class="${w.placed ? 'out' : ''}">${standee(p.id, i)}</span>`).join('');
-    return `<button class="mini b${p.id}${S.current === p.id && !S.over ? ' cur' : ''}" data-pid="${p.id}">
+    return `<button class="mini b${p.id}${S.current === p.id && !S.over ? ' cur' : ''}" data-pid="${p.id}" style="--bg:url(art/board${p.stage}.jpg)">
       <span class="vhead"><span class="who c${p.id}">${esc(p.name)}</span><b>${D.stages[p.stage].name}</b><span class="vstat">⭐ ${Engine.score(p).total}</span></span>
       <span class="mres">${res}</span>
       <span class="mrow"><span class="mplots">${mini}</span><span class="mws">${ws}</span></span>
