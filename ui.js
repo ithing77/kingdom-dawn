@@ -53,8 +53,9 @@ const View = (() => {
   }
 
   // 부품 그림 (art/*.png, GPT로 만든 부품 모음에서 잘라냄)
-  const meeple = (pid, cls = '') => `<img class="mp ${cls}" src="art/w${pid}.png" alt="">`;
-  const baby = () => `<img class="mp" src="art/baby.png" alt="">`;
+  // 일꾼 스탠디: 순서대로 남·여 번갈아, 무장하면 기사, 이번 라운드에 태어났으면 아기
+  const look = (w, i) => w.born ? 'baby' : w.arm ? (i % 2 ? 'knightF' : 'knightM') : (i % 2 ? 'woman' : 'man');
+  const standee = (pid, i, cls = '') => `<img class="mp ${cls}" src="art/s${pid}_${look(S.players[pid].workers[i] || {}, i)}.png" alt="">`;
   const tok = (r, n) => `<span class="tok" title="${D.res[r].name}"><img src="art/${r}.png" alt="${D.res[r].name}"><b>${n}</b></span>`;
   // 창고 더미: 개수만큼 토큰을 흩어 놓는다. 자리는 순번으로 정해져 있어서 다시 그려도 안 움직인다.
   const scatter = i => { const h = Math.sin(i * 12.9898 + 4.1) * 43758.5453; const f = h - Math.floor(h); return f; };
@@ -76,7 +77,7 @@ const View = (() => {
       const cls = ['card', `k-${a.kind}`, sp.by !== null ? 'taken' : '', can.has(id) ? 'can' : '', a.round === S.round ? `new${newRound ? ' flip' : ''}` : '', sel === id ? 'sel' : ''].join(' ');
       return `<button class="${cls}" data-id="${id}" ${can.has(id) ? '' : 'disabled'}>
         <span class="cname">${a.name}</span>
-        <span class="art">${art(a)}${a.round ? `<span class="royal">왕명 ${a.round}</span>` : ''}${stock ? `<span class="stock">${stock}</span>` : ''}${sp.by !== null ? meeple(sp.by, 'on') : ''}</span>
+        <span class="art">${art(a)}${a.round ? `<span class="royal">왕명 ${a.round}</span>` : ''}${stock ? `<span class="stock">${stock}</span>` : ''}${sp.by !== null ? standee(sp.by, sp.w ?? 0, 'on') : ''}</span>
         <span class="ctext">${a.text}${why ? `<span class="why">${why}</span>` : ''}</span></button>`;
     }).join('');
     for (const b of $('board').querySelectorAll('.card.can')) b.onclick = () => { sel = b.dataset.id; pick = 0; render(S, me); };
@@ -119,8 +120,8 @@ const View = (() => {
     for (let i = 0; i < Math.min(cap, D.maxWorkers); i++) {
       const w = p.workers[i];
       if (!w) { slots.push(`<span class="slot open" title="빈 자리 — 새 주민이 들어올 수 있어요"></span>`); continue; }
-      const tag = w.born ? '<i>아기</i>' : w.arm ? `<i>⚔️${w.arm}</i>` : '';
-      slots.push(`<span class="slot${w.placed ? ' out' : ''}${w.born ? ' baby' : ''}" title="${w.placed ? '일하러 나감' : '집에 있음'}">${w.born ? baby() : meeple(p.id)}${tag}</span>`);
+      const tag = w.arm ? `<i>⚔️${w.arm}</i>` : '';
+      slots.push(`<span class="slot${w.placed ? ' out' : ''}${w.born ? ' baby' : ''}" title="${w.placed ? '일하러 나감' : '집에 있음'}">${standee(p.id, i)}${tag}</span>`);
     }
     return `<div class="house">${slots.join('')}</div>`;
   }
@@ -150,7 +151,7 @@ const View = (() => {
       const used = 1 + p.buildings.length + p.fields;
       return `<i class="${i < used ? 'u' : i < H.plotsTotal(p) ? 'e' : 'f'}"></i>`;
     }).join('');
-    const ws = p.workers.map(w => `<span class="${w.placed ? 'out' : ''}">${meeple(p.id)}</span>`).join('');
+    const ws = p.workers.map((w, i) => `<span class="${w.placed ? 'out' : ''}">${standee(p.id, i)}</span>`).join('');
     return `<button class="mini b${p.id}${S.current === p.id && !S.over ? ' cur' : ''}" data-pid="${p.id}">
       <span class="vhead"><span class="who c${p.id}">${esc(p.name)}</span><b>${D.stages[p.stage].name}</b><span class="vstat">⭐ ${Engine.score(p).total}</span></span>
       <span class="mres">${res}</span>

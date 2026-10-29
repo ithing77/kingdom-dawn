@@ -85,13 +85,19 @@ const Engine = (() => {
     const n = s.players.length;
     for (let k = 1; k <= n; k++) {
       const i = (s.current + k) % n;
-      if (ready(s.players[i]).length) { s.current = i; return; }
+      const p = s.players[i];
+      if (!ready(p).length) continue;
+      s.current = i;
+      if (legalMoves(s, i).length) return;
+      // 빈 칸이 다 차서 둘 곳이 없으면 남은 주민은 이번 라운드 집에서 쉰다
+      for (const w of ready(p)) w.placed = true;
+      log(s, `${p.name} — 둘 곳이 없어 남은 주민이 쉬어요`);
     }
     endRound(s);
   }
 
   function endRound(s) {
-    for (const id of s.open) s.spaces[id].by = null;
+    for (const id of s.open) { s.spaces[id].by = null; s.spaces[id].w = null; }
     if (D.harvest && D.harvestRounds.includes(s.round)) harvest(s);
     if (s.round >= D.rounds) {
       s.over = true;
@@ -238,7 +244,7 @@ const Engine = (() => {
     const o = move.opt || {};
     const w = pickWorker(p, move.space);
     w.placed = true;
-    sp.by = pid;
+    sp.by = pid; sp.w = p.workers.indexOf(w);
     const name = ACT[move.space].name;
     const say = t => log(s, `${p.name} → [${name}] ${t}`);
 
