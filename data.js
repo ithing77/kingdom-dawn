@@ -2,8 +2,8 @@
 // 자원: wood 목재, stone 석재, iron 철, food 식량, gold 금화
 
 const DATA = {
-  rounds: 8,
-  harvestRounds: [2, 4, 6, 8],
+  rounds: 10,
+  harvestRounds: [2, 4, 6, 8, 10],
   maxWorkers: 4,
   maxArm: 8,
   start: { workers: 2, res: { wood: 1, stone: 0, iron: 0, food: 2, gold: 0 } },
@@ -26,7 +26,7 @@ const DATA = {
   harvest: { foodPerField: 2, eat: 2, eatNewborn: 1, faminePenalty: 3 },
 
   // kind = 카드 테두리 색(res 자원, build 건설, temple 신전, trade 교역, war 전쟁, family 가문). art = 그림 없을 때 쓰는 이모지, img = 그림 칸 그림
-  // 행동 칸. minPlayers 이상일 때만 깔린다. round 가 있으면 그 라운드에 열린다(왕명).
+  // 행동 칸. minPlayers 이상일 때만 깔린다. round 가 있으면 그 라운드에 열린다(왕명), roundByPlayers 로 인원별 예외.
   actions: [
     { id: 'logging', kind: 'res', art: '🪓', img: 'art/cards/logging.jpg', name: '벌목장', acc: { wood: 3 }, text: '목재 누적' },
     { id: 'quarry', kind: 'res', art: '⛏️', img: 'art/cards/quarry.jpg', name: '채석장', acc: { stone: 2 }, text: '석재 누적' },
@@ -40,15 +40,27 @@ const DATA = {
     { id: 'mine', kind: 'res', art: '⚒️', img: 'art/cards/mine.jpg', name: '철광', round: 1, acc: { iron: 1 }, text: '철 누적' },
     { id: 'market', kind: 'trade', art: '⚖️', img: 'art/cards/market.jpg', name: '장터', round: 3, text: '자원 2개 → 금화 3, 또는 금화 1' },
     { id: 'family', kind: 'family', art: '👶', img: 'art/cards/family.jpg', name: '새 식구', round: 2, text: '주민 +1 (빈 자리 필요), 아니면 건물 1채' },
-    { id: 'forge', kind: 'war', art: '🔥', img: 'art/cards/forge.jpg', name: '대장간', round: 4, text: '맨손 주민 무장(철 1~5) → 원정 1' },
-    { id: 'expedition', kind: 'war', art: '⚔️', img: 'art/cards/expedition.jpg', name: '원정', round: 5, text: '기사만: 원정 2' },
-    { id: 'trade', kind: 'trade', art: '🐪', img: 'art/cards/trade.jpg', name: '교역로', round: 6, text: '철 1 → 금화 2, 최대 2번' },
+    { id: 'forge', kind: 'war', art: '🔥', img: 'art/cards/forge.jpg', name: '대장간', text: '맨손 주민을 기사로 무장(철 1~5) + 보상 1' },
+    { id: 'trade', kind: 'trade', art: '🐪', img: 'art/cards/trade.jpg', name: '교역로', round: 5, text: '철 1 → 금화 2, 최대 2번' },
     { id: 'wedding', kind: 'family', art: '💍', img: 'art/cards/wedding.jpg', name: '혼례', round: 7, text: '주민 +1 (빈 자리 필요)' },
-    { id: 'bigExpedition', kind: 'war', art: '🐉', img: 'art/cards/bigExpedition.jpg', name: '대원정', round: 8, text: '기사만: 원정 3' },
+    { id: 'knighting', kind: 'war', art: '🎖️', round: 6, name: '기사 서임식', text: '철 없이 무장 +1 (맨손이면 기사 무장 1)' },
+    { id: 'envoy', kind: 'trade', art: '📯', round: 8, name: '왕의 사절', text: '평판 +2 또는 금화 2' },
+    { id: 'festival', kind: 'family', art: '🎉', round: 9, name: '풍년 축제', text: '식량 1 + 밭마다 식량 1' },
+    { id: 'coronation', kind: 'temple', art: '👑', round: 10, name: '대관식 준비', text: '승격(금화 1 덜 냄) 또는 평판 +1' },
+
+    // 원정 지도: 기사만 갈 수 있는 목적지. minArm 이상 무장한 기사가 가서 pool 에서 loot 개 고르고, 다녀오면 무장 +1.
+    // rounds = 인원별로 열리는 라운드(없으면 처음부터). minPlayers 이상일 때만.
+    { id: 'forest', zone: 'map', kind: 'war', art: '🌲', name: '가까운 숲', minArm: 1, loot: 2, pool: ['wood2', 'food2', 'stone2'], text: '무장 1+ · 목재·식량·석재 중 2' },
+    { id: 'forest2', zone: 'map', kind: 'war', art: '🌲', name: '가까운 숲 (둘째 길)', minArm: 1, loot: 2, pool: ['wood2', 'food2', 'stone2'], minPlayers: 3, text: '무장 1+ · 목재·식량·석재 중 2' },
+    { id: 'ruins', zone: 'map', kind: 'war', art: '🏚️', name: '옛 성채 폐허', minArm: 2, loot: 2, pool: ['stone2', 'iron1', 'food2', 'gold2'], round: 4, roundByPlayers: { 4: 0 }, text: '무장 2+ · 석재·철·식량·금화 중 2' },
+    { id: 'mountain', zone: 'map', kind: 'war', art: '⛰️', name: '바위 산', minArm: 3, loot: 2, pool: ['stone2', 'iron1', 'gold2', 'field'], text: '무장 3+ · 석재·철·금화·밭 중 2' },
+    { id: 'dragon', zone: 'map', kind: 'war', art: '🐉', name: '용의 둥지', minArm: 6, loot: 2, pool: ['gold2', 'rep3', 'field', 'build'], text: '무장 6+ · 금화·평판·밭·건물 중 2' },
   ],
 
   market: { pay: 2, gold: 3, freeGold: 1 },
   trade: { iron: 1, gold: 2, times: 2 },
+  envoy: { rep: 2, gold: 2 },
+  coronationDiscount: { gold: 1 },
   forgeMaxIron: 5,
 
   // 원정 보상. arm = 필요한 무장

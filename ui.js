@@ -56,6 +56,8 @@ const View = (() => {
     return { grown, eat, need: Math.max(0, eat - grown) };
   }
 
+  const k0 = q => (q.id === S.first ? '🚩' : '') + (S.nextFirst === q.id ? '📜' : '');
+
   function top(newRound) {
     const cur = S.players[S.current], p = S.players[me];
     const turn = S.over ? '게임 끝' : S.current === me ? '내 차례!' : `${esc(cur.name)} 차례`;
@@ -63,7 +65,7 @@ const View = (() => {
     const f = foodNeed(p);
     const steps = [];
     for (let r = 1; r <= D.rounds; r++) {
-      const ev = D.actions.filter(a => a.round === r).map(a => a.name).join('·') || '—';
+      const ev = D.actions.filter(a => H.inGame(a, S.players.length) && roundOf(a) === r).map(a => a.name).join('·') || '—';
       const st = r < S.round ? 'past' : r === S.round ? 'now' : '';
       steps.push(`<div class="rd ${st}"><span class="rn">${r}</span><span class="ev">${ev}</span>${r === S.round && !S.over ? '<span class="mark">👑</span>' : ''}</div>`);
       if (D.harvestRounds.includes(r)) {
@@ -72,7 +74,9 @@ const View = (() => {
         steps.push(`<div class="hv ${r < S.round ? 'past' : ''}${soon ? ' soon' : ''}" title="주민 1명당 식량 ${D.harvest.eat}, 밭에서 ${f.grown} 나옴">🌾<small>수확</small>${soon ? `<b class="${ok ? 'ok' : 'no'}">식량 ${p.res.food}/${f.need}</b>` : ''}</div>`);
       }
     }
-    $('top').innerHTML = `<b class="ttl">👑 왕국의 여명</b><div class="tl">${steps.join('')}</div><span class="turn">${turn}</span>`;
+    const n = S.players.length;
+    const order = Array.from({ length: n }, (_, k) => S.players[(S.first + k) % n]).map(q => `<span class="who c${q.id}${q.id === S.current && !S.over ? ' now' : ''}">${k0(q)}${esc(q.name)}</span>`).join('<i>›</i>');
+    $('top').innerHTML = `<b class="ttl">👑 왕국의 여명</b><div class="tl">${steps.join('')}</div><span class="order" title="이번 라운드 차례 순서 (🚩 = 선)">${order}</span><span class="turn">${turn}</span>`;
     if (newRound && S.round > 1) document.querySelector('#top .mark')?.animate([{ transform: 'translateX(-90px)', opacity: .3 }, { transform: 'none', opacity: 1 }], { duration: 700, easing: 'ease-out' });
     document.title = S.current === me && !S.over ? '▶ 내 차례 — 왕국의 여명' : '왕국의 여명';
   }
@@ -92,9 +96,9 @@ const View = (() => {
         return '지을 수 있는 건물이 없어요 (자원 부족)';
       case 'wedding': return p.workers.length >= D.maxWorkers ? '주민이 최대예요' : '집에 빈 자리가 없어요 (오두막을 지어요)';
       case 'forge': return H.ready(p).some(w => !w.arm) ? '철이 없어요' : '맨손 주민이 없어요';
-      case 'expedition': case 'bigExpedition': return '남은 기사가 없어요 (대장간에서 무장)';
       case 'trade': return '철이 없어요';
     }
+    if (ACT[id].zone === 'map') return `무장 ${ACT[id].minArm} 이상 기사가 필요해요 (대장간)`;
     return '지금은 못 해요';
   }
 
@@ -113,21 +117,30 @@ const View = (() => {
   }
   const art = x => x.img ? `<img src="${x.img}" alt="">` : `<span class="emo">${x.art || '❔'}</span>`;
 
+  const roundOf = a => H.roundOf(a, S.players.length);
+  const future = zone => D.actions.filter(a => H.inGame(a, S.players.length) && roundOf(a) > S.round && (a.zone === 'map') === (zone === 'map'))
+    .sort((a, b) => roundOf(a) - roundOf(b))
+    .map(a => `<div class="card back" title="${roundOf(a)}라운드에 열려요"><span class="rnd">${roundOf(a)}라운드</span></div>`).join('');
+
+  function cardHtml(id, can, p, newRound) {
+    const a = ACT[id], sp = S.spaces[id];
+    const stock = Object.entries(sp.stock).filter(([, n]) => n).map(([r, n]) => tok(r, n)).join('');
+    const why = can.has(id) ? '' : whyNot(p, id);
+    const opened = roundOf(a) === S.round;
+    const cls = ['card', `k-${a.kind}`, a.zone === 'map' ? 'dest' : '', sp.by !== null ? 'taken' : '', can.has(id) ? 'can' : '', opened ? `new${newRound ? ' flip' : ''}` : '', sel === id ? 'sel' : ''].join(' ');
+    const badge = a.zone === 'map' ? `<span class="royal">⚔️ 무장 ${a.minArm}+</span>` : roundOf(a) ? `<span class="royal">왕명 ${roundOf(a)}</span>` : '';
+    return `<button class="${cls}" data-id="${id}" ${can.has(id) ? '' : 'disabled'}>
+      <span class="cname">${a.name}</span>
+      <span class="art">${art(a)}${badge}${stock ? `<span class="stock">${stock}</span>` : ''}${sp.by !== null ? standee(sp.by, sp.w ?? 0, 'on') : sel === id && pending !== null ? standee(me, pending, 'on ghost') : ''}</span>
+      <span class="ctext">${a.text}${why ? `<span class="why">${why}</span>` : ''}</span></button>`;
+  }
+
   function board(moves, newRound) {
     const p = S.players[me];
     const can = new Set(moves.map(m => m.space));
-    $('board').innerHTML = S.open.map(id => {
-      const a = ACT[id], sp = S.spaces[id];
-      const stock = Object.entries(sp.stock).filter(([, n]) => n).map(([r, n]) => tok(r, n)).join('');
-      const why = can.has(id) ? '' : whyNot(p, id);
-      const cls = ['card', `k-${a.kind}`, sp.by !== null ? 'taken' : '', can.has(id) ? 'can' : '', a.round === S.round ? `new${newRound ? ' flip' : ''}` : '', sel === id ? 'sel' : ''].join(' ');
-      return `<button class="${cls}" data-id="${id}" ${can.has(id) ? '' : 'disabled'}>
-        <span class="cname">${a.name}</span>
-        <span class="art">${art(a)}${a.round ? `<span class="royal">왕명 ${a.round}</span>` : ''}${stock ? `<span class="stock">${stock}</span>` : ''}${sp.by !== null ? standee(sp.by, sp.w ?? 0, 'on') : sel === id && pending !== null ? standee(me, pending, 'on ghost') : ''}</span>
-        <span class="ctext">${a.text}${why ? `<span class="why">${why}</span>` : ''}</span></button>`;
-    }).join('') + D.actions.filter(a => a.round > S.round).sort((a, b) => a.round - b.round).map(a =>
-      `<div class="card back" title="${a.round}라운드에 열려요"><span class="rnd">${a.round}라운드</span></div>`).join('');
-    for (const b of $('board').querySelectorAll('.card.can')) b.onclick = () => { if (sel === b.dataset.id) return; sel = b.dataset.id; pick = 0; fly = true; render(S, me); };
+    $('board').innerHTML = S.open.filter(id => ACT[id].zone !== 'map').map(id => cardHtml(id, can, p, newRound)).join('') + future('cards');
+    $('map').innerHTML = `<h4>🗺️ 원정 지도 <small>기사만 · 다녀오면 무장 +1</small></h4><div class="dests">${S.open.filter(id => ACT[id].zone === 'map').map(id => cardHtml(id, can, p, newRound)).join('')}${future('map')}</div>`;
+    for (const b of document.querySelectorAll('#board .card.can, #map .card.can')) b.onclick = () => { if (sel === b.dataset.id) return; sel = b.dataset.id; pick = 0; fly = true; render(S, me); };
   }
 
   function stageNeed(p) {
@@ -184,7 +197,7 @@ const View = (() => {
     return `<div class="village b${p.id}${turn ? ' cur' : ''}">
       <div class="land" style="background-image:url(art/board${p.stage}.jpg)">${plots(p)}</div>
       <div class="vside">
-        <div class="vhead"><span class="who c${p.id}">${esc(p.name)}</span><b>${D.stages[p.stage].name}</b>${p.id === me ? '<span class="sub">내 마을</span>' : ''}
+        <div class="vhead"><span class="who c${p.id}">${k0(p)}${esc(p.name)}</span><b>${D.stages[p.stage].name}</b>${p.id === me ? '<span class="sub">내 마을</span>' : ''}
           <span class="vstat">⭐ ${sc}점 · 평판 ${p.rep}${p.famine ? ` · <span class="no">기근 ${p.famine}</span>` : ''}</span></div>
         ${store(p)}
         <div class="vrow">${house(p)}<div>${road(p)}<div class="need">${stageNeed(p)}</div></div></div>
@@ -201,7 +214,7 @@ const View = (() => {
     }).join('');
     const ws = p.workers.map((w, i) => `<span class="${w.placed ? 'out' : ''}">${standee(p.id, i)}</span>`).join('');
     return `<button class="mini b${p.id}${S.current === p.id && !S.over ? ' cur' : ''}" data-pid="${p.id}" style="--bg:url(art/board${p.stage}.jpg)">
-      <span class="vhead"><span class="who c${p.id}">${esc(p.name)}</span><b>${D.stages[p.stage].name}</b><span class="vstat">⭐ ${Engine.score(p).total}</span></span>
+      <span class="vhead"><span class="who c${p.id}">${k0(p)}${esc(p.name)}</span><b>${D.stages[p.stage].name}</b><span class="vstat">⭐ ${Engine.score(p).total}</span></span>
       <span class="mres">${res}</span>
       <span class="mrow"><span class="mplots">${mini}</span><span class="mws">${ws}</span></span>
     </button>`;
@@ -224,7 +237,13 @@ const View = (() => {
 
   function optLabel(id, o) {
     const lootText = (ls, b) => ls.map(l => l === 'build' && b ? `${BLD[b].name} 건설` : LOOT[l].name).join(' + ');
-    if (o.do === 'promote') return `✨ 승격 → ${D.stages[S.players[me].stage + 1].name} (${costText(D.stages[S.players[me].stage + 1].cost)})`;
+    if (o.do === 'promote') {
+      const cost = Object.fromEntries(Object.entries(D.stages[S.players[me].stage + 1].cost).map(([r, n]) => [r, Math.max(0, n - (id === 'coronation' ? D.coronationDiscount[r] || 0 : 0))]));
+      return `✨ 승격 → ${D.stages[S.players[me].stage + 1].name} (${costText(cost)})`;
+    }
+    if (o.do === 'rep') return '평판 +1';
+    if (o.rep) return `평판 +${o.rep}`;
+    if (o.gold) return `${R('gold')} 금화 ${o.gold}`;
     if (o.do === 'confess') return '🙏 고해성사 (기근 1 지움)';
     if (o.do === 'offering') return '🪙 헌금함 (식량 1)';
     if (o.grow) return '👶 새 주민 맞이하기';

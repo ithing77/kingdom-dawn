@@ -85,7 +85,7 @@ aside { display: grid; gap: 10px; align-content: start; }
 .tag { background: #efe6d2; border-radius: 6px; padding: 0 6px; font-size: 12px; border: 1px solid #0002; }
 .tag.tier0 { background: #ecd3b4; border-color: #a8703c; } .tag.tier1 { background: #e3e6ea; border-color: #8c96a3; } .tag.tier2 { background: #fbe9a8; border-color: #c9a24a; }
 
-#side { display: grid; grid-template-rows: auto 1fr; gap: 8px; min-height: 0; }
+#side { display: grid; grid-template-rows: auto auto 1fr; gap: 8px; min-height: 0; }
 #choice:empty { display: none; }
 #choice .panel { background: var(--panel); border: 2px solid var(--accent); border-radius: 10px; padding: 10px; display: grid; gap: 8px; font-size: 13px; }
 #choice .opts { flex-direction: column; } #choice .opts button { text-align: left; }
@@ -190,3 +190,19 @@ aside { display: grid; gap: 10px; align-content: start; }
 .tl .hv b { font-size: 11px; background: #fff; border-radius: 6px; padding: 0 4px; margin-top: 1px; }
 .tl .hv.past { opacity: .4; }
 .tl .hv.soon { box-shadow: 0 0 0 2px #ffe28a; }
+
+/* 원정 지도 */
+#map { background: linear-gradient(#f3e3bfee, #e2c98fee); border: 2px solid #8a6a3a; border-radius: 10px; padding: 6px 8px 8px; box-shadow: 0 3px 8px #0006; }
+#map h4 { margin: 0 0 6px; font-size: 14px; color: #5a3d1a; }
+#map h4 small { font-weight: normal; font-size: 11px; color: #7a5a2a; }
+#map .dests { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+#map .card { aspect-ratio: auto; grid-template-rows: auto 64px auto; padding: 4px; gap: 3px; }
+#map .card .cname { font-size: 12px; }
+#map .card .ctext { font-size: 10px; }
+#map .card .art .emo { font-size: 28px; }
+#map .card .art .mp.on { height: 54px; }
+#map .card.back { min-height: 120px; }
+.order { display: flex; align-items: center; gap: 2px; white-space: nowrap; font-size: 12px; }
+.order i { font-style: normal; opacity: .6; }
+.order .who { opacity: .75; }
+.order .who.now { opacity: 1; box-shadow: 0 0 0 2px #ffe28a; }

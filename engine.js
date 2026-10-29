@@ -21,11 +21,19 @@ const Engine = (() => {
   const gain = (p, g) => { for (const [r, n] of Object.entries(g)) p.res[r] += n; };
   const resText = g => Object.entries(g).filter(([, n]) => n).map(([r, n]) => `${D.res[r].name} ${n}`).join(', ');
 
-  function canPromote(p) {
+  // discount = 덜 내는 자원 (대관식 준비)
+  function promoteCost(p, discount = {}) {
+    const next = D.stages[p.stage + 1];
+    return Object.fromEntries(Object.entries(next.cost).map(([r, n]) => [r, Math.max(0, n - (discount[r] || 0))]));
+  }
+  function canPromote(p, discount) {
     const next = D.stages[p.stage + 1];
     if (!next) return false;
-    return p.workers.length >= next.need.workers && p.buildings.length >= next.need.buildings && afford(p, next.cost);
+    return p.workers.length >= next.need.workers && p.buildings.length >= next.need.buildings && afford(p, promoteCost(p, discount));
   }
+  // 인원에 따라 여는 라운드가 다를 수 있다 (0 = 처음부터)
+  const roundOf = (a, n) => (a.roundByPlayers && a.roundByPlayers[n] !== undefined ? a.roundByPlayers[n] : a.round || 0);
+  const inGame = (a, n) => (a.minPlayers || 0) <= n;
   function buildable(s, p) {
     if (freePlots(p) < 1) return [];
     return D.buildings.filter(b => b.stage <= p.stage && afford(p, b.cost) &&
@@ -59,7 +67,7 @@ const Engine = (() => {
       spaces: {}, open: [],
       first: seed % n, nextFirst: null, current: 0, stageFirst: [true, false, false],
     };
-    for (const a of D.actions) if (!a.round && (a.minPlayers || 0) <= n) openSpace(s, a.id);
+    for (const a of D.actions) if (inGame(a, n) && !roundOf(a, n)) openSpace(s, a.id);
     startRound(s);
     return s;
   }
@@ -68,7 +76,8 @@ const Engine = (() => {
 
   function startRound(s) {
     s.round++;
-    for (const a of D.actions) if (a.round === s.round) { openSpace(s, a.id); log(s, `📜 왕명: [${a.name}] 칸이 열렸어요`); }
+    const n = s.players.length;
+    for (const a of D.actions) if (inGame(a, n) && roundOf(a, n) === s.round) { openSpace(s, a.id); log(s, `📜 왕명: [${a.name}] ${a.zone === 'map' ? '원정 목적지가' : '칸이'} 열렸어요`); }
     for (const id of s.open) {
       const acc = ACT[id].acc;
       if (acc) for (const [r, k] of Object.entries(acc)) s.spaces[id].stock[r] = (s.spaces[id].stock[r] || 0) + k;
@@ -133,7 +142,8 @@ const Engine = (() => {
   // move = { space, opt } . 일꾼은 엔진이 고른다.
   function pickWorker(p, space) {
     const r = ready(p);
-    if (space === 'expedition' || space === 'bigExpedition') return r.filter(w => w.arm > 0).sort((a, b) => b.arm - a.arm)[0];
+    const a = ACT[space];
+    if (a.zone === 'map') return r.filter(w => w.arm >= a.minArm).sort((x, y) => y.arm - x.arm)[0];
     if (space === 'forge') return r.find(w => w.arm === 0);
     return r.slice().sort((a, b) => a.arm - b.arm)[0];
   }
@@ -145,12 +155,14 @@ const Engine = (() => {
   }
 
   // 원정 보상 고르기: 무장 arm 으로 k개. 건물 보상은 짓는 건물까지 정한다.
-  function lootOptions(s, p, arm, k) {
-    const ok = D.loot.filter(l => l.arm <= arm && !l.build && !(l.field && freePlots(p) < 1)).map(l => l.id);
+  function lootOptions(s, p, arm, k, pool) {
+    const inPool = l => !pool || pool.includes(l.id);
+    const ok = D.loot.filter(l => inPool(l) && l.arm <= arm && !l.build && !(l.field && freePlots(p) < 1)).map(l => l.id);
+    const canBuild = arm >= LOOT.build.arm && inPool(LOOT.build);
     const out = [];
-    const kk = Math.min(k, ok.length + (arm >= LOOT.build.arm ? 1 : 0));
+    const kk = Math.min(k, ok.length + (canBuild ? 1 : 0));
     for (const c of combos(ok, kk)) out.push({ loot: c });
-    if (arm >= LOOT.build.arm && kk >= 1) {
+    if (canBuild && kk >= 1) {
       for (const c of combos(ok, kk - 1)) {
         const q = clone(p);
         applyLoot(null, q, c);
@@ -210,14 +222,18 @@ const Engine = (() => {
         }
         return o;
       }
-      case 'expedition': return lootOptions(s, p, w.arm, 2);
-      case 'bigExpedition': return lootOptions(s, p, w.arm, 3);
+      case 'knighting': return [{}];
+      case 'envoy': return [{ rep: D.envoy.rep }, { gold: D.envoy.gold }];
+      case 'festival': return [{}];
+      case 'coronation': return [...(canPromote(p, D.coronationDiscount) ? [{ do: 'promote' }] : []), { do: 'rep' }];
       case 'trade': {
         const o = [];
         for (let t = 1; t <= Math.min(D.trade.times, Math.floor(p.res.iron / D.trade.iron)); t++) o.push({ times: t });
         return o;
       }
-      default: return [{}];
+      default:
+        if (ACT[id].zone === 'map') return lootOptions(s, p, w.arm, ACT[id].loot, ACT[id].pool);
+        return [{}];
     }
   }
 
@@ -268,15 +284,8 @@ const Engine = (() => {
       case 'seal': s.nextFirst = pid; p.res.food++; p.res.gold++; say('다음 라운드 선 + 식량 1 + 금화 1'); break;
       case 'temple': {
         if (has(p, 'chapel')) p.rep++;
-        if (o.do === 'promote') {
-          const next = D.stages[p.stage + 1];
-          pay(p, next.cost);
-          p.stage++;
-          p.rep += next.rep;
-          let extra = '';
-          if (!s.stageFirst[p.stage]) { s.stageFirst[p.stage] = true; p.rep += D.firstToStageBonus; extra = ` (첫 ${next.name}! 평판 +${D.firstToStageBonus})`; }
-          say(`✨ 축복을 받아 ${next.name}(으)로 승격! 평판 +${next.rep}${extra}`);
-        } else if (o.do === 'confess') { p.famine--; say('고해성사: 기근 표시 1개 지움'); }
+        if (o.do === 'promote') promote(s, p, say);
+        else if (o.do === 'confess') { p.famine--; say('고해성사: 기근 표시 1개 지움'); }
         else { p.res.food++; say('헌금함: 식량 1'); }
         break;
       }
@@ -298,16 +307,35 @@ const Engine = (() => {
         doExpedition(s, p, w, o);
         break;
       }
-      case 'expedition': case 'bigExpedition': doExpedition(s, p, w, o); break;
+      case 'knighting': w.arm = Math.min(D.maxArm, Math.max(1, w.arm + 1)); say(`기사 서임: 무장 ${w.arm}`); break;
+      case 'envoy':
+        if (o.rep) { p.rep += o.rep; say(`평판 +${o.rep}`); } else { p.res.gold += o.gold; say(`금화 ${o.gold}`); }
+        break;
+      case 'festival': { const f = 1 + p.fields; p.res.food += f; say(`식량 ${f}`); break; }
+      case 'coronation':
+        if (o.do === 'promote') promote(s, p, say, D.coronationDiscount); else { p.rep++; say('평판 +1'); }
+        break;
       case 'trade': {
         const g = (D.trade.gold + (has(p, 'bazaar') ? 1 : 0)) * o.times;
         p.res.iron -= D.trade.iron * o.times; p.res.gold += g;
         say(`철 ${o.times} → 금화 ${g}`);
         break;
       }
+      default:
+        if (ACT[move.space].zone === 'map') doExpedition(s, p, w, o);
     }
     advance(s);
     return { ok: true, state: s };
+  }
+
+  function promote(s, p, say, discount) {
+    const next = D.stages[p.stage + 1];
+    pay(p, promoteCost(p, discount));
+    p.stage++;
+    p.rep += next.rep;
+    let extra = '';
+    if (!s.stageFirst[p.stage]) { s.stageFirst[p.stage] = true; p.rep += D.firstToStageBonus; extra = ` (첫 ${next.name}! 평판 +${D.firstToStageBonus})`; }
+    say(`✨ ${next.name}(으)로 승격! 평판 +${next.rep}${extra}`);
   }
 
   function doExpedition(s, p, w, o) {
@@ -319,7 +347,7 @@ const Engine = (() => {
 
   return {
     createGame, legalMoves, applyMove, score, key,
-    helpers: { freePlots, capacity, canPromote, buildable, canGrow, knights, plotsTotal, ready, afford },
+    helpers: { freePlots, capacity, canPromote, buildable, canGrow, knights, plotsTotal, ready, afford, roundOf, inGame },
   };
 })();
 
