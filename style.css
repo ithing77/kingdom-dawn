@@ -174,3 +174,19 @@ aside { display: grid; gap: 10px; align-content: start; }
 .plot.home, .plot.bld { background: #ffffff26; position: relative; }
 .plot img { max-width: 92%; max-height: 74%; object-fit: contain; filter: drop-shadow(0 4px 3px #0008); }
 .plot.home small, .plot.bld small { position: absolute; bottom: 2px; }
+
+/* 라운드 순서도 */
+#top { flex-wrap: nowrap; gap: 12px; padding: 6px 12px; }
+#top .ttl { white-space: nowrap; }
+.tl { flex: 1; display: flex; align-items: stretch; gap: 4px; overflow-x: auto; }
+.tl .rd { position: relative; flex: 1; min-width: 74px; display: grid; justify-items: center; padding: 2px 4px; border-radius: 8px; background: #fff2; border: 1px solid #fff3; }
+.tl .rn { font-size: 11px; opacity: .8; }
+.tl .ev { font-size: 12px; font-weight: bold; white-space: nowrap; }
+.tl .rd.past { opacity: .4; }
+.tl .rd.now { background: #ffe28a; color: #3a2a10; border-color: #fff; box-shadow: 0 0 8px #ffe28a; }
+.tl .mark { position: absolute; top: -10px; right: -6px; font-size: 16px; filter: drop-shadow(0 1px 1px #0008); }
+.tl .hv { display: grid; justify-items: center; align-content: center; padding: 0 6px; border-radius: 8px; background: #6b8f3a; border: 1px solid #a9d06a; font-size: 14px; line-height: 1.1; }
+.tl .hv small { font-size: 10px; }
+.tl .hv b { font-size: 11px; background: #fff; border-radius: 6px; padding: 0 4px; margin-top: 1px; }
+.tl .hv.past { opacity: .4; }
+.tl .hv.soon { box-shadow: 0 0 0 2px #ffe28a; }

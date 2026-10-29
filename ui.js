@@ -22,7 +22,7 @@ const View = (() => {
     if (sel && !moves.some(m => m.space === sel)) sel = null;
     if (newRound) sel = null;
     pending = sel ? pendingWorker(moves.filter(m => m.space === sel)[pick] || moves.find(m => m.space === sel)) : null;
-    top(); board(moves, newRound); players(); choice(moves); logView();
+    top(newRound); board(moves, newRound); players(); choice(moves); logView();
     if (fly) { fly = false; flyIn(); }
   }
 
@@ -48,11 +48,32 @@ const View = (() => {
     ], { duration: 520, easing: 'cubic-bezier(.3,.7,.4,1)' });
   }
 
-  function top() {
-    const cur = S.players[S.current];
-    const harvest = D.harvestRounds.includes(S.round) ? ' · 🌾 이번 라운드 끝에 수확' : '';
+  // 위쪽 띠: 라운드 순서도. 라운드마다 열리는 카드, 수확 때 필요한 식량, 지금 위치 표시.
+  function foodNeed(p) {
+    const Hv = D.harvest, has = id => p.buildings.includes(id);
+    const grown = p.fields * (Hv.foodPerField + (has('mill') ? 1 : 0)) + (has('granary') ? 2 : 0);
+    const eat = p.workers.reduce((t, w) => t + (w.born ? Hv.eatNewborn : Hv.eat), 0);
+    return { grown, eat, need: Math.max(0, eat - grown) };
+  }
+
+  function top(newRound) {
+    const cur = S.players[S.current], p = S.players[me];
     const turn = S.over ? '게임 끝' : S.current === me ? '내 차례!' : `${esc(cur.name)} 차례`;
-    $('top').innerHTML = `<b>👑 왕국의 여명</b><span>${S.round} / ${D.rounds} 라운드${harvest}</span><span class="turn">${turn}</span>`;
+    const nextHarvest = D.harvestRounds.find(r => r >= S.round);
+    const f = foodNeed(p);
+    const steps = [];
+    for (let r = 1; r <= D.rounds; r++) {
+      const ev = D.actions.filter(a => a.round === r).map(a => a.name).join('·') || '—';
+      const st = r < S.round ? 'past' : r === S.round ? 'now' : '';
+      steps.push(`<div class="rd ${st}"><span class="rn">${r}</span><span class="ev">${ev}</span>${r === S.round && !S.over ? '<span class="mark">👑</span>' : ''}</div>`);
+      if (D.harvestRounds.includes(r)) {
+        const soon = r === nextHarvest && !S.over;
+        const ok = p.res.food >= f.need;
+        steps.push(`<div class="hv ${r < S.round ? 'past' : ''}${soon ? ' soon' : ''}" title="주민 1명당 식량 ${D.harvest.eat}, 밭에서 ${f.grown} 나옴">🌾<small>수확</small>${soon ? `<b class="${ok ? 'ok' : 'no'}">식량 ${p.res.food}/${f.need}</b>` : ''}</div>`);
+      }
+    }
+    $('top').innerHTML = `<b class="ttl">👑 왕국의 여명</b><div class="tl">${steps.join('')}</div><span class="turn">${turn}</span>`;
+    if (newRound && S.round > 1) document.querySelector('#top .mark')?.animate([{ transform: 'translateX(-90px)', opacity: .3 }, { transform: 'none', opacity: 1 }], { duration: 700, easing: 'ease-out' });
     document.title = S.current === me && !S.over ? '▶ 내 차례 — 왕국의 여명' : '왕국의 여명';
   }
 
