@@ -98,7 +98,7 @@ const View = (() => {
       case 'forge': return H.ready(p).some(w => !w.arm) ? '철이 없어요' : '맨손 주민이 없어요';
       case 'trade': return '철이 없어요';
     }
-    if (ACT[id].zone === 'map') return `무장 ${ACT[id].minArm} 이상 기사가 필요해요 (대장간)`;
+    if (ACT[id].zone === 'map') return `기사 무장 ${ACT[id].minArm}+ 필요`;
     return '지금은 못 해요';
   }
 
@@ -120,7 +120,7 @@ const View = (() => {
   const roundOf = a => H.roundOf(a, S.players.length);
   const future = zone => D.actions.filter(a => H.inGame(a, S.players.length) && roundOf(a) > S.round && (a.zone === 'map') === (zone === 'map'))
     .sort((a, b) => roundOf(a) - roundOf(b))
-    .map(a => `<div class="card back" title="${roundOf(a)}라운드에 열려요"><span class="rnd">${roundOf(a)}라운드</span></div>`).join('');
+    .map(a => `<div class="card back" title="${roundOf(a)}라운드에 열려요"><span></span><span class="art blank"></span><span class="rnd">${roundOf(a)}라운드</span></div>`).join('');
 
   function cardHtml(id, can, p, newRound) {
     const a = ACT[id], sp = S.spaces[id];
@@ -131,8 +131,8 @@ const View = (() => {
     const badge = a.zone === 'map' ? `<span class="royal">⚔️ 무장 ${a.minArm}+</span>` : roundOf(a) ? `<span class="royal">왕명 ${roundOf(a)}</span>` : '';
     return `<button class="${cls}" data-id="${id}" ${can.has(id) ? '' : 'disabled'}>
       <span class="cname">${a.name}</span>
-      <span class="art">${art(a)}${badge}${stock ? `<span class="stock">${stock}</span>` : ''}${sp.by !== null ? standee(sp.by, sp.w ?? 0, 'on') : sel === id && pending !== null ? standee(me, pending, 'on ghost') : ''}</span>
-      <span class="ctext">${a.text}${why ? `<span class="why">${why}</span>` : ''}</span></button>`;
+      <span class="art">${art(a)}${badge}${stock ? `<span class="stock">${stock}</span>` : ''}${sp.by !== null ? standee(sp.by, sp.w ?? 0, 'on') : sel === id && pending !== null ? standee(me, pending, 'on ghost') : ''}${why ? `<span class="why">${why}</span>` : ''}</span>
+      <span class="ctext" title="${a.text}">${a.text}</span></button>`;
   }
 
   function board(moves, newRound) {

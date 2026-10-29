@@ -27,34 +27,35 @@ main { display: grid; grid-template-columns: 1fr 300px; gap: 12px; padding: 10px
 #game { background: #5f4128 url(art/table.jpg) center / cover; }
 
 /* 카드: 테두리 색(--kc)은 종류마다 */
-.card { --kc: #2f5d3a; --kc2: #1c3b24; position: relative; display: grid; grid-template-rows: auto 1fr auto; aspect-ratio: 5 / 6.2;
-  padding: 6px; gap: 5px; border: 0; border-radius: 10px; text-align: center; color: var(--ink);
-  background: linear-gradient(160deg, var(--kc), var(--kc2)); box-shadow: 0 0 0 2px #c9a24a inset, 0 3px 6px #0006; transition: transform .12s; }
-.k-res { --kc: #2f6b3c; --kc2: #173a20; }
-.k-build { --kc: #8a5a2e; --kc2: #4e3018; }
-.k-temple { --kc: #e9e1cc; --kc2: #b9a46a; }
-.k-trade { --kc: #2f5f8f; --kc2: #1a3552; }
-.k-war { --kc: #9b2f2a; --kc2: #551614; }
-.k-family { --kc: #b0577f; --kc2: #6a2b48; }
-.cname { background: linear-gradient(#fbf3dc, #e8d6a6); border: 1px solid #c9a24a; border-radius: 6px; font-weight: bold; font-size: 13px; padding: 2px 4px; }
-.art { position: relative; display: grid; place-items: center; border: 1px solid #c9a24a; border-radius: 4px; overflow: hidden; min-height: 60px;
-  background: radial-gradient(circle at 50% 40%, #fff8e0 0, color-mix(in srgb, var(--kc) 45%, #f3e3b8) 70%); }
-.art img { width: 100%; height: 100%; object-fit: cover; }
-.art .emo { font-size: 34px; filter: drop-shadow(0 2px 2px #0005); }
-.ctext { background: linear-gradient(#fbf3dc, #eadbb3); border: 1px solid #c9a24a; border-radius: 6px; font-size: 11px; line-height: 1.3; padding: 4px; display: grid; gap: 2px; }
-.ctext .why { color: var(--bad); font-size: 11px; }
-.royal { position: absolute; top: 3px; left: 3px; font-size: 10px; background: #c9a24a; color: #2b2620; border-radius: 4px; padding: 0 4px; font-weight: bold; }
-.art .stock { position: absolute; bottom: 4px; right: 4px; display: flex; gap: 2px; }
-.art .mp.on { position: absolute; height: 64px; width: auto; bottom: 2px; left: 6px; filter: drop-shadow(0 2px 2px #000a); }
+/* 카드: 모두 같은 틀. 이름 띠(종류 색) · 그림 칸(3:2) · 글 칸(2줄 고정). 얇은 금테 하나. */
+.card { --kc: #2f6b3c; position: relative; display: grid; grid-template-rows: 22px auto 34px; padding: 0; gap: 0; overflow: hidden;
+  border: 0; border-radius: 8px; text-align: center; color: var(--ink); background: #f6ecd2;
+  box-shadow: 0 0 0 1px #c9a24a, 0 3px 6px #0007; transition: transform .12s; }
+.k-res { --kc: #3c6b3f; }
+.k-build { --kc: #8a5a2e; }
+.k-temple { --kc: #a8873a; }
+.k-trade { --kc: #2f5f8f; }
+.k-war { --kc: #962f2a; }
+.k-family { --kc: #a3527a; }
+.cname { display: grid; place-items: center; background: var(--kc); color: #fff; font-weight: bold; font-size: 12px; letter-spacing: .5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 6px; text-shadow: 0 1px 1px #0006; }
+.art { position: relative; display: grid; place-items: center; aspect-ratio: 3 / 2; overflow: hidden; background: color-mix(in srgb, var(--kc) 25%, #f3e3b8); border-bottom: 1px solid #c9a24a; }
+.art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.art .emo { font-size: 30px; filter: drop-shadow(0 2px 2px #0005); }
+.ctext { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; align-self: center; font-size: 11px; line-height: 1.3; padding: 0 6px; color: #3a3024; }
+.art .why { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 4px; font-size: 10px; line-height: 1.25; color: #fff; background: #000b; text-align: center; }
+.royal { position: absolute; top: 3px; left: 3px; font-size: 10px; background: #f3d77aee; color: #2b2620; border-radius: 4px; padding: 0 4px; font-weight: bold; box-shadow: 0 1px 2px #0005; }
+.art .stock { position: absolute; top: 3px; right: 3px; display: flex; gap: 2px; }
+.art .mp.on { position: absolute; height: 78%; width: auto; bottom: 2px; left: 6px; filter: drop-shadow(0 2px 2px #000a); }
 .card:disabled { opacity: 1; cursor: default; }
 .card:disabled:not(.taken) .art { filter: saturate(.35) brightness(.9); }
 .card.taken { filter: brightness(.82); }
 .card.can { cursor: pointer; }
 .card.can:hover { transform: translateY(-4px); }
-.card.can::after { content: ''; position: absolute; inset: -3px; border-radius: 12px; border: 2px solid #ffe28a; pointer-events: none; }
+.card.can::after { content: ''; position: absolute; inset: 0; border-radius: 8px; border: 2px solid #ffe28a; pointer-events: none; }
 .card.sel { transform: translateY(-6px); }
-.card.sel::after { border-width: 4px; box-shadow: 0 0 14px #ffe28a; }
-.card.new { box-shadow: 0 0 0 2px #c9a24a inset, 0 0 12px 3px #ffe28acc; }
+.card.sel::after { border-width: 3px; box-shadow: inset 0 0 10px #ffe28a; }
+.card.sel { box-shadow: 0 0 0 1px #c9a24a, 0 0 16px 4px #ffe28a; }
+.card.new { box-shadow: 0 0 0 1px #c9a24a, 0 0 12px 3px #ffe28acc; }
 .card.flip { animation: flip .6s ease-out; }
 @keyframes flip { from { transform: rotateY(90deg); } to { transform: none; } }
 
@@ -167,8 +168,10 @@ aside { display: grid; gap: 10px; align-content: start; }
 .art .mp.ghost { filter: drop-shadow(0 6px 4px #000a); }
 
 /* 아직 안 열린 라운드 카드: 뒷면 */
-.card.back { display: grid; place-items: end center; padding: 8px; background: #1d2a52 url(art/cards/back.jpg) center / cover; box-shadow: 0 0 0 2px #c9a24a inset, 0 3px 6px #0006; }
-.card.back .rnd { background: #0009; color: #f3d77a; font-size: 12px; font-weight: bold; border-radius: 8px; padding: 1px 8px; }
+.card.back { background: #1d2a52 url(art/cards/back.jpg) center / cover; }
+.card.back .art.blank { background: none; border: 0; }
+.card.back .rnd { place-self: center; }
+.card.back .rnd { background: #000a; color: #f3d77a; font-size: 12px; font-weight: bold; border-radius: 8px; padding: 1px 8px; }
 
 /* 땅 위 건물 그림 */
 .plot.home, .plot.bld { background: #ffffff26; position: relative; }
@@ -196,12 +199,10 @@ aside { display: grid; gap: 10px; align-content: start; }
 #map h4 { margin: 0 0 6px; font-size: 14px; color: #5a3d1a; }
 #map h4 small { font-weight: normal; font-size: 11px; color: #7a5a2a; }
 #map .dests { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-#map .card { aspect-ratio: auto; grid-template-rows: auto 64px auto; padding: 4px; gap: 3px; }
-#map .card .cname { font-size: 12px; }
+#map .card { grid-template-rows: 20px auto 30px; }
+#map .card .cname { font-size: 11px; }
 #map .card .ctext { font-size: 10px; }
-#map .card .art .emo { font-size: 28px; }
-#map .card .art .mp.on { height: 54px; }
-#map .card.back { min-height: 120px; }
+#map .card.back { min-height: 0; }
 .order { display: flex; align-items: center; gap: 2px; white-space: nowrap; font-size: 12px; }
 .order i { font-style: normal; opacity: .6; }
 .order .who { opacity: .75; }
