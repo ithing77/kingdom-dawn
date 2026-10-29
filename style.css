@@ -45,7 +45,7 @@ main { display: grid; grid-template-columns: 1fr 300px; gap: 12px; padding: 10px
 .ctext .why { color: var(--bad); font-size: 11px; }
 .royal { position: absolute; top: 3px; left: 3px; font-size: 10px; background: #c9a24a; color: #2b2620; border-radius: 4px; padding: 0 4px; font-weight: bold; }
 .art .stock { position: absolute; bottom: 4px; right: 4px; display: flex; gap: 2px; }
-.art .mp.on { position: absolute; width: 38px; height: 38px; bottom: 2px; left: 6px; filter: drop-shadow(0 2px 2px #000a); }
+.art .mp.on { position: absolute; height: 44px; width: auto; bottom: 2px; left: 6px; filter: drop-shadow(0 2px 2px #000a); }
 .card:disabled { opacity: 1; cursor: default; }
 .card:disabled:not(.taken) .art { filter: saturate(.35) brightness(.9); }
 .card.taken { filter: brightness(.82); }
@@ -59,15 +59,16 @@ main { display: grid; grid-template-columns: 1fr 300px; gap: 12px; padding: 10px
 @keyframes flip { from { transform: rotateY(90deg); } to { transform: none; } }
 
 /* 일꾼 말과 자원 토큰 */
-.mp { width: 22px; height: 22px; fill: currentColor; stroke: #0007; stroke-width: .8; }
+.mp { height: 24px; width: auto; filter: drop-shadow(0 2px 1px #0006); }
 .f0 { color: var(--p0); } .f1 { color: var(--p1); } .f2 { color: var(--p2); } .f3 { color: var(--p3); }
 .wks { display: flex; align-items: flex-end; gap: 2px; flex-wrap: wrap; }
 .wk { position: relative; display: inline-grid; }
 .wk.used { opacity: .3; }
-.wk.baby .mp { width: 15px; height: 15px; }
+.wk.baby .mp { height: 15px; }
 .wk i { position: absolute; top: -6px; right: -10px; font-style: normal; font-size: 10px; background: #fff; border-radius: 6px; padding: 0 2px; }
 .wks .sub { margin-left: 6px; }
-.tok { display: inline-flex; align-items: center; gap: 1px; padding: 1px 6px 1px 3px; border-radius: 12px; font-size: 13px; background: #fff; border: 1px solid #0003; box-shadow: 0 1px 2px #0003; }
+.tok { display: inline-flex; align-items: center; gap: 2px; padding: 1px 6px 1px 2px; border-radius: 12px; font-size: 13px; background: #fffaf0e6; border: 1px solid #0003; box-shadow: 0 1px 2px #0003; }
+.tok img { height: 18px; width: auto; }
 .tok b { font-size: 12px; }
 .t-wood { background: #e9c99a; } .t-stone { background: #d5d5d0; } .t-iron { background: #b8c0cc; } .t-food { background: #f3dc9b; } .t-gold { background: #ffe680; }
 .who { display: inline-block; padding: 0 6px; border-radius: 8px; color: #fff; font-size: 12px; }
@@ -117,18 +118,19 @@ aside { display: grid; gap: 10px; align-content: start; }
 .plot.empty { background: #c8d79a66; border: 2px dashed #8a9a5a; color: #6b7a40; }
 .plot.fog { background: #9a9a9a55; color: #777; filter: grayscale(1); opacity: .7; }
 .store { display: grid; grid-template-columns: repeat(5, minmax(64px, 1fr)); gap: 6px; }
-.pile { border-radius: 8px; padding: 4px; display: grid; justify-items: center; gap: 2px; border: 1px solid #0002; min-height: 92px; }
+.pile { border-radius: 8px; padding: 4px; display: grid; justify-items: center; gap: 2px; border: 1px solid #0002; min-height: 92px; box-shadow: inset 0 2px 6px #0003; }
 .pile .lbl { font-size: 11px; }
-.pile .heap { display: flex; flex-wrap: wrap-reverse; justify-content: center; align-content: flex-start; width: 56px; min-height: 44px; }
-.pile .heap i { font-style: normal; font-size: 16px; margin: -3px -2px; filter: drop-shadow(0 1px 1px #0005); }
-.pile .heap em { font-size: 11px; color: #0005; font-style: normal; align-self: center; }
-.pile b { font-size: 16px; }
+.pile { position: relative; }
+.pile .heap { position: relative; width: 100%; height: 74px; display: grid; place-items: center; }
+.pile .heap img { position: absolute; height: 30px; width: auto; filter: drop-shadow(0 3px 2px #0007); }
+.pile .heap em { font-size: 11px; color: #0005; font-style: normal; }
+.pile b { position: absolute; right: 6px; bottom: 3px; font-size: 13px; background: #fff9; border-radius: 8px; padding: 0 5px; }
 .house { display: flex; gap: 4px; padding: 6px; background: #b88a55; border-radius: 8px 8px 4px 4px; clip-path: polygon(0 22%, 50% 0, 100% 22%, 100% 100%, 0 100%); padding-top: 18px; }
 .slot { position: relative; width: 34px; height: 34px; display: grid; place-items: center; background: #f3e3c0; border-radius: 6px; }
-.slot .mp { width: 28px; height: 28px; }
+.slot .mp { height: 30px; }
 .slot.open { border: 2px dashed #7a5a2a; background: transparent; }
 .slot.out .mp { opacity: .25; }
-.slot.baby .mp { width: 18px; height: 18px; }
+.slot.baby .mp { height: 20px; }
 .slot i { position: absolute; top: -4px; right: -6px; font-size: 9px; font-style: normal; background: #fff; border-radius: 5px; padding: 0 2px; }
 .road { display: flex; align-items: center; margin: 2px 0 4px; }
 .node { font-size: 11px; padding: 2px 6px; border-radius: 10px; background: #fff; border: 1px solid #b89b63; color: #999; }
@@ -145,7 +147,7 @@ aside { display: grid; gap: 10px; align-content: start; }
 .mplots { display: grid; grid-template-columns: repeat(5, 9px); gap: 2px; }
 .mplots i { height: 9px; border-radius: 2px; }
 .mplots .u { background: #8a6a3a; } .mplots .e { background: #c8d79a; border: 1px dashed #8a9a5a; } .mplots .f { background: #bbb6; }
-.mws .mp { width: 16px; height: 16px; } .mws .out .mp { opacity: .25; }
+.mws .mp { height: 18px; } .mws .out .mp { opacity: .25; }
 .zoom { display: none; position: fixed; inset: 0; background: #0008; place-items: center; z-index: 10; }
 .zbox { display: grid; gap: 8px; justify-items: end; max-width: 95vw; }
 

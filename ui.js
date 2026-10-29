@@ -52,11 +52,18 @@ const View = (() => {
     return '지금은 못 해요';
   }
 
-  // 일꾼 말 (색은 플레이어 색)
-  const MEEPLE = '<path d="M12 1.5a3.6 3.6 0 0 1 3.6 3.6c0 1.1-.5 2-1.2 2.7 3.2.6 7.6 2 7.6 4.6 0 1.1-1.4 1.4-3.2 1.1l2.1 7.6c.2.8-.4 1.2-1 1.2h-4.6L12 17.2l-3.3 5.1H4.1c-.6 0-1.2-.4-1-1.2l2.1-7.6c-1.8.3-3.2 0-3.2-1.1 0-2.6 4.4-4 7.6-4.6-.7-.7-1.2-1.6-1.2-2.7A3.6 3.6 0 0 1 12 1.5z"/>';
-  const meeple = (pid, cls = '') => `<svg class="mp f${pid} ${cls}" viewBox="0 0 24 24">${MEEPLE}</svg>`;
-  // 자원 토큰
-  const tok = (r, n) => `<span class="tok t-${r}" title="${D.res[r].name}">${R(r)}<b>${n}</b></span>`;
+  // 부품 그림 (art/*.png, GPT로 만든 부품 모음에서 잘라냄)
+  const meeple = (pid, cls = '') => `<img class="mp ${cls}" src="art/w${pid}.png" alt="">`;
+  const baby = () => `<img class="mp" src="art/baby.png" alt="">`;
+  const tok = (r, n) => `<span class="tok" title="${D.res[r].name}"><img src="art/${r}.png" alt="${D.res[r].name}"><b>${n}</b></span>`;
+  // 창고 더미: 개수만큼 토큰을 흩어 놓는다. 자리는 순번으로 정해져 있어서 다시 그려도 안 움직인다.
+  const scatter = i => { const h = Math.sin(i * 12.9898 + 4.1) * 43758.5453; const f = h - Math.floor(h); return f; };
+  function heap(r, n) {
+    return Array.from({ length: Math.min(n, 12) }, (_, i) => {
+      const x = 8 + scatter(i * 3 + 1) * 58, y = 62 - Math.floor(i / 4) * 14 - scatter(i * 3 + 2) * 16, rot = (scatter(i * 3 + 3) - .5) * 50;
+      return `<img src="art/${r}.png" style="left:${x}%;top:${y}%;transform:translate(-50%,-50%) rotate(${rot}deg)" alt="">`;
+    }).join('');
+  }
   const art = x => x.img ? `<img src="${x.img}" alt="">` : `<span class="emo">${x.art || '❔'}</span>`;
 
   function board(moves, newRound) {
@@ -102,8 +109,7 @@ const View = (() => {
   function store(p) {
     return `<div class="store">${Object.keys(D.res).map(r => {
       const n = p.res[r];
-      const pile = Array.from({ length: Math.min(n, 8) }, () => `<i>${R(r)}</i>`).join('');
-      return `<div class="pile t-${r}"><span class="lbl">${D.res[r].name}</span><span class="heap">${pile || '<em>없음</em>'}</span><b>${n}</b></div>`;
+      return `<div class="pile t-${r}"><span class="lbl">${D.res[r].name}</span><span class="heap">${heap(r, n) || '<em>없음</em>'}</span><b>${n}</b></div>`;
     }).join('')}</div>`;
   }
 
@@ -114,7 +120,7 @@ const View = (() => {
       const w = p.workers[i];
       if (!w) { slots.push(`<span class="slot open" title="빈 자리 — 새 주민이 들어올 수 있어요"></span>`); continue; }
       const tag = w.born ? '<i>아기</i>' : w.arm ? `<i>⚔️${w.arm}</i>` : '';
-      slots.push(`<span class="slot${w.placed ? ' out' : ''}${w.born ? ' baby' : ''}" title="${w.placed ? '일하러 나감' : '집에 있음'}">${meeple(p.id)}${tag}</span>`);
+      slots.push(`<span class="slot${w.placed ? ' out' : ''}${w.born ? ' baby' : ''}" title="${w.placed ? '일하러 나감' : '집에 있음'}">${w.born ? baby() : meeple(p.id)}${tag}</span>`);
     }
     return `<div class="house">${slots.join('')}</div>`;
   }
