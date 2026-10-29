@@ -11,6 +11,7 @@ const View = (() => {
   const esc = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 
   let S = null, me = 0, send = () => {}, sel = null, pick = 0, lastLog = 0;
+  let pending = null, fly = false; // 놓으려고 고른 주민 순번, 방금 골라서 날아가는 중인지
 
   function init(sendFn) { send = sendFn; }
 
@@ -20,7 +21,31 @@ const View = (() => {
     const moves = Engine.legalMoves(S, me);
     if (sel && !moves.some(m => m.space === sel)) sel = null;
     if (newRound) sel = null;
+    pending = sel ? pendingWorker(moves.filter(m => m.space === sel)[pick] || moves.find(m => m.space === sel)) : null;
     top(); board(moves, newRound); players(); choice(moves); logView();
+    if (fly) { fly = false; flyIn(); }
+  }
+
+  // 이 수를 두면 어느 주민이 나가는지 (규칙 엔진이 고르는 주민)
+  function pendingWorker(m) {
+    const r = m && Engine.applyMove(S, me, m);
+    if (!r || !r.ok) return null;
+    const a = S.players[me].workers, b = r.state.players[me].workers;
+    const i = a.findIndex((w, k) => !w.placed && b[k] && b[k].placed);
+    return i < 0 ? null : i;
+  }
+
+  // 집에 있던 스탠디가 고른 카드로 슥 날아가 놓인다
+  function flyIn() {
+    const ghost = document.querySelector('.card.sel .mp.ghost');
+    const from = document.querySelector(`#me .slot[data-i="${pending}"]`);
+    if (!ghost || !from) return;
+    const a = from.getBoundingClientRect(), b = ghost.getBoundingClientRect();
+    ghost.animate([
+      { transform: `translate(${a.left - b.left}px, ${a.top - b.top}px) scale(.8)`, opacity: .6 },
+      { transform: 'translate(0, -24px) scale(1.1)', offset: .75 },
+      { transform: 'none', opacity: 1 },
+    ], { duration: 520, easing: 'cubic-bezier(.3,.7,.4,1)' });
   }
 
   function top() {
@@ -77,10 +102,10 @@ const View = (() => {
       const cls = ['card', `k-${a.kind}`, sp.by !== null ? 'taken' : '', can.has(id) ? 'can' : '', a.round === S.round ? `new${newRound ? ' flip' : ''}` : '', sel === id ? 'sel' : ''].join(' ');
       return `<button class="${cls}" data-id="${id}" ${can.has(id) ? '' : 'disabled'}>
         <span class="cname">${a.name}</span>
-        <span class="art">${art(a)}${a.round ? `<span class="royal">왕명 ${a.round}</span>` : ''}${stock ? `<span class="stock">${stock}</span>` : ''}${sp.by !== null ? standee(sp.by, sp.w ?? 0, 'on') : ''}</span>
+        <span class="art">${art(a)}${a.round ? `<span class="royal">왕명 ${a.round}</span>` : ''}${stock ? `<span class="stock">${stock}</span>` : ''}${sp.by !== null ? standee(sp.by, sp.w ?? 0, 'on') : sel === id && pending !== null ? standee(me, pending, 'on ghost') : ''}</span>
         <span class="ctext">${a.text}${why ? `<span class="why">${why}</span>` : ''}</span></button>`;
     }).join('');
-    for (const b of $('board').querySelectorAll('.card.can')) b.onclick = () => { sel = b.dataset.id; pick = 0; render(S, me); };
+    for (const b of $('board').querySelectorAll('.card.can')) b.onclick = () => { if (sel === b.dataset.id) return; sel = b.dataset.id; pick = 0; fly = true; render(S, me); };
   }
 
   function stageNeed(p) {
@@ -121,7 +146,8 @@ const View = (() => {
       const w = p.workers[i];
       if (!w) { slots.push(`<span class="slot open" title="빈 자리 — 새 주민이 들어올 수 있어요"></span>`); continue; }
       const tag = w.arm ? `<i>⚔️${w.arm}</i>` : '';
-      slots.push(`<span class="slot${w.placed ? ' out' : ''}${w.born ? ' baby' : ''}" title="${w.placed ? '일하러 나감' : '집에 있음'}">${standee(p.id, i)}${tag}</span>`);
+      const out = w.placed || (p.id === me && i === pending);
+      slots.push(`<span class="slot${out ? ' out' : ''}${w.born ? ' baby' : ''}" data-i="${i}" title="${w.placed ? '일하러 나감' : '집에 있음'}">${standee(p.id, i)}${tag}</span>`);
     }
     return `<div class="house">${slots.join('')}</div>`;
   }
@@ -207,20 +233,27 @@ const View = (() => {
     return out.join(' · ') || '변화 없음';
   }
 
+  // 확인 창: 고른 카드 바로 옆에 뜬다
   function choice(moves) {
-    if (!sel || S.over || S.current !== me) { $('choice').innerHTML = ''; return; }
+    const pop = $('pop');
+    if (!sel || S.over || S.current !== me) { pop.innerHTML = ''; pop.style.display = 'none'; return; }
     const opts = moves.filter(m => m.space === sel);
     if (pick >= opts.length) pick = 0;
     const m = opts[pick];
-    $('choice').innerHTML = `<div class="panel">
-      <b>[${ACT[sel].name}] ${opts.length > 1 ? '— 하나 고르세요' : ''}</b>
+    pop.innerHTML = `<b>${ACT[sel].name}${opts.length > 1 ? ' — 하나 고르세요' : ''}</b>
       ${opts.length > 1 ? `<div class="opts">${opts.map((o, i) => `<button data-i="${i}" class="${i === pick ? 'on' : ''}">${optLabel(sel, o.opt)}</button>`).join('')}</div>` : `<div>${optLabel(sel, m.opt)}</div>`}
-      <div class="diff">미리보기: ${preview(m)}</div>
-      <div class="row"><button class="primary" id="okBtn">확정</button><button id="cancelBtn">취소</button></div>
-    </div>`;
-    for (const b of $('choice').querySelectorAll('.opts button')) b.onclick = () => { pick = +b.dataset.i; choice(moves); };
+      <div class="diff">${preview(m)}</div>
+      <div class="row"><button class="primary" id="okBtn">여기에 놓기</button><button id="cancelBtn">취소</button></div>`;
+    pop.style.display = 'grid';
+    for (const b of pop.querySelectorAll('.opts button')) b.onclick = () => { pick = +b.dataset.i; render(S, me); };
     $('okBtn').onclick = () => { const mv = opts[pick]; sel = null; send(mv); };
     $('cancelBtn').onclick = () => { sel = null; render(S, me); };
+    // 자리 잡기: 카드 오른쪽, 모자라면 왼쪽. 화면 밖으로 안 나가게.
+    const c = document.querySelector('.card.sel').getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+    let x = c.right + 10;
+    if (x + w > innerWidth - 8) x = c.left - w - 10;
+    const y = Math.min(Math.max(8, c.top), innerHeight - h - 8);
+    pop.style.left = `${Math.max(8, x)}px`; pop.style.top = `${y}px`;
   }
 
   function logView() {

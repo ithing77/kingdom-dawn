@@ -158,3 +158,10 @@ aside { display: grid; gap: 10px; align-content: start; }
   .village { grid-template-columns: 1fr; }
   .land { height: auto; width: 100%; }
 }
+
+/* 일꾼 놓기 확인 창 (카드 옆) */
+#pop { display: none; position: fixed; z-index: 5; width: 280px; gap: 8px; padding: 10px; font-size: 13px; background: var(--panel); border: 2px solid #c9a24a; border-radius: 10px; box-shadow: 0 8px 20px #0008; }
+#pop .opts { display: flex; flex-direction: column; gap: 4px; }
+#pop .opts button { text-align: left; font-size: 12px; padding: 4px 8px; }
+#pop .opts button.on { background: var(--hl); font-weight: bold; }
+.art .mp.ghost { filter: drop-shadow(0 6px 4px #000a); }
